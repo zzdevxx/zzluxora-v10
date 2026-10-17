@@ -17,6 +17,57 @@ if str(BASE_DIR) not in sys.path:
 class TestUIModules(unittest.TestCase):
     """Verifies UI imports, demo showfile patching, and QLC+ workspace agreement."""
 
+    def setUp(self):
+        # Every test that builds a MainWindow leaves one alive unless the Qt
+        # object is actually destroyed. 35 tests x 4 top-level widgets is enough
+        # to corrupt the heap and abort the runner at exit ("malloc_consolidate():
+        # unaligned fastbin chunk detected"), even though every assertion passed.
+        # Track what exists before the test and tear down whatever it added.
+        from ui.qt_compat import QApplication, HAS_QT
+        if HAS_QT:
+            app = QApplication.instance()
+            self._preexisting_widgets = set(app.topLevelWidgets()) if app else set()
+        else:
+            self._preexisting_widgets = set()
+
+    def tearDown(self):
+        from ui.qt_compat import QApplication, HAS_QT
+        if not HAS_QT:
+            return
+        app = QApplication.instance()
+        if app is None:
+            return
+        # deleteLater only queues a deletion that the Qt event loop has to
+        # deliver, and this suite never runs one — processEvents alone does not
+        # flush DeferredDelete. Destroy the C++ object directly instead. Without
+        # this, 35 MainWindows stay alive, their heaps overlap, and the runner
+        # aborts at exit with "malloc_consolidate(): unaligned fastbin chunk".
+        try:
+            import shiboken6
+            destroy = shiboken6.delete
+        except ImportError:
+            try:
+                import sip
+                destroy = sip.delete
+            except ImportError:
+                destroy = None
+
+        for widget in app.topLevelWidgets():
+            if widget in self._preexisting_widgets:
+                continue
+            # A widget whose C++ side is already gone still appears in this
+            # list; touching it raises "Internal C++ object already deleted".
+            try:
+                widget.close()
+                # Only destroy roots. Destroying a parent already destroys its
+                # children, and touching a child afterwards raises the same
+                # error.
+                if destroy is not None and widget.parent() is None:
+                    destroy(widget)
+            except RuntimeError:
+                pass
+        app.processEvents()
+
     def _application(self):
         from ui.qt_compat import QApplication, HAS_QT
         if not HAS_QT:
@@ -590,7 +641,9 @@ class TestUIModules(unittest.TestCase):
 
         # Drive the real close event rather than calling win.close(), so the
         # shutdown path is exercised without tearing the window down mid-test.
-        import PyQt6.QtGui as _QtGui
+        # Import through qt_compat: the app supports both PySide6 and PyQt6,
+        # so this suite must pass on whichever binding is installed.
+        from ui.qt_compat import QtGui as _QtGui
         event = _QtGui.QCloseEvent()
         win.closeEvent(event)
 
