@@ -1,5 +1,12 @@
 # 🎛️ ZZLUXORA v10.0.0 — Next-Gen Production Stage Lighting Console
 
+[![Release](https://img.shields.io/badge/Release-v10.0.0-16a34a?style=flat-square)](https://github.com/zzdree/zzluxora-v10)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![Qt](https://img.shields.io/badge/PySide6-Qt6-41CD52?style=flat-square&logo=qt)](https://doc.qt.io/qtforpython/)
+[![Tests](https://img.shields.io/badge/Tests-177%20passing-brightgreen?style=flat-square)](https://github.com/zzdree/zzluxora-v10)
+[![License](https://img.shields.io/badge/License-Apache--2.0-blue?style=flat-square)](LICENSE)
+
+
 > **Tugas Akhir / Skripsi Sarjana Teknik Komputer**  
 > **Judul:** *"Rancang Bangun Sistem Audio-Reactive Lighting Design Berbasis Analisis Mood Lagu Rohani dengan Pemetaan Warna HSV-RGBW dan Protokol Art-Net DMX512"*  
 > **Peneliti:** Andreas Restuawanta Christwara (`NIM: 5312422036`)  
