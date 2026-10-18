@@ -83,7 +83,7 @@ class AboutDialog(QDialog if HAS_QT else object):
             ("Department", "Teknik Elektro (Electrical Engineering)"),
             ("Faculty", "Fakultas Teknik (Faculty of Engineering)"),
             ("University", "Universitas Negeri Semarang (UNNES)"),
-            ("Thesis Advisor", "Mario Norman Syah, S.Pd., M.Eng. (NIP: 199304212024061001)"),
+            ("Thesis Advisor", "Mario Norman Syah, S.Pd., M.Eng."),
             ("Research Title", "Rancang Bangun Sistem Audio-Reactive Lighting Design Berbasis Analisis Mood Lagu Rohani dengan Pemetaan Warna HSV-RGBW dan Protokol Art-Net DMX512"),
             ("Field Location", "Gereja Isa Almasih (GIA) Deliksari, Kota Semarang"),
         ]

@@ -22,7 +22,7 @@ python3 ~/ANDREAS/agent-memory/tools/memlog.py search "kata kunci"              
 - **Nama Aplikasi:** **ZZLUXORA** (v10.0.0 Flagship Next-Gen)
 - **Repositori:** `https://github.com/zzdree/zzluxora-v10.git` (Branch: `main`)
 - **Peneliti / Pengembang:** Andreas Restuawanta Christwara (`NIM: 5312422036`)
-- **Dosen Pembimbing:** Mario Norman Syah, S.Pd., M.Eng. (`NIP: 199304212024061001`)
+- **Dosen Pembimbing:** Mario Norman Syah, S.Pd., M.Eng.
 - **Institusi:** Program Studi S1 Teknik Komputer, Fakultas Teknik, Universitas Negeri Semarang (UNNES)
 - **Karakter Desain:** Modern-minimalis industri panggung pertunjukan (mengadopsi estetika **grandMA2 / grandMA3 onPC** dan utilitas **QLC+**).
 - **Format Showfile Project:** `.zlx` (JSON showfile).

@@ -2,7 +2,7 @@
 ZZLUXORA v10.0.0 - Flagship Stage Lighting Control & Autonomous Audio-Reactive Engine
 Developed for S1 Teknik Komputer FT Universitas Negeri Semarang (UNNES).
 Peneliti: Andreas Restuawanta Christwara (NIM: 5312422036)
-Dosen Pembimbing: Mario Norman Syah, S.Pd., M.Eng. (NIP: 199304212024061001)
+Dosen Pembimbing: Mario Norman Syah, S.Pd., M.Eng.
 """
 
 from __future__ import annotations

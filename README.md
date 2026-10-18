@@ -3,7 +3,7 @@
 > **Tugas Akhir / Skripsi Sarjana Teknik Komputer**  
 > **Judul:** *"Rancang Bangun Sistem Audio-Reactive Lighting Design Berbasis Analisis Mood Lagu Rohani dengan Pemetaan Warna HSV-RGBW dan Protokol Art-Net DMX512"*  
 > **Peneliti:** Andreas Restuawanta Christwara (`NIM: 5312422036`)  
-> **Dosen Pembimbing:** Mario Norman Syah, S.Pd., M.Eng. (`NIP: 199304212024061001`)  
+> **Dosen Pembimbing:** Mario Norman Syah, S.Pd., M.Eng.  
 > **Institusi:** Program Studi S1 Teknik Komputer, Jurusan Teknik Elektro, Fakultas Teknik, Universitas Negeri Semarang (UNNES)
 
 ---
