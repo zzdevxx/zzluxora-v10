@@ -27,7 +27,7 @@ Dokumen ini untuk agent yang melanjutkan pekerjaan ZZLUXORA. Baca ini dulu sebel
 | | |
 |---|---|
 | Software `zzdree/zzluxora-v10` | HEAD **`30b1037`**, working tree **bersih**, sinkron `origin/main` |
-| Naskah `zzdree/script` | HEAD **`9febd7b`**, bersih, sinkron (koreksi naskah §2b + feedback v4 §11-14) |
+| Naskah `zzdree/zzluxora-thesis` | HEAD **`9febd7b`**, bersih, sinkron (koreksi naskah §2b + feedback v4 §11-14) |
 | Test suite | **177 test unik lulus** (146 unittest + 31 pytest), exit 0 · jumlah wajib diperiksa, lihat §2c |
 | Anti-slop | **173 berkas, 0 error, 0 warning** |
 | Audit | FASE 8 (18 defect) + audit adversarial 16 Okt (7 defect) + audit mendalam 17 Okt (9 defect), lihat §2, §2b, §2d |
@@ -301,7 +301,7 @@ Dua butir dari feedback 16 Okt **belum** tuntas:
   sidecar provenance. Belum dipakai karena daftar lagu belum ditetapkan owner.
 - Olah data lapangan: `script/tools/analyze_field_data.py` (CSV 41 kolom → tabel
   Bab 4). **Perhatikan:** alat ini ada di repo **script**, bukan `zzluxora_v10`.
-- Bridge korelasi fitur audio: `zzluxora_v10/tools/export_correlation.py`.
+- Bridge korelasi fitur audio: `zzluxora-v10/tools/export_correlation.py`.
 
 ### Sisa temuan low (belum ditindak)
 Tidak ada yang mendesak. Beberapa `except Exception: pass` yang sengaja (probe opsional, tutup socket) versus satu yang bermasalah (`audio_loader.py:109` menelan kegagalan decode lalu pindah format diam-diam).

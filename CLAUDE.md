@@ -36,7 +36,7 @@ python3 ~/ANDREAS/agent-memory/tools/memlog.py search "kata kunci"              
 Aplikasi dibangun menggunakan **Python 3.10+** dan **Universal Qt6 Compatibility Layer (`ui/qt_compat.py`)** yang mendukung **PySide6** maupun **PyQt6** secara transparan:
 
 ```text
-zzluxora_v10/
+zzluxora-v10/
 ├── core/                      # PURE PYTHON ENGINE (ZERO-GUI DEPENDENCY)
 │   ├── __init__.py
 │   ├── audio_loader.py        # Pemuat audio multi-format (.wav, .mp3, .flac, .ogg)
@@ -144,7 +144,7 @@ zzluxora_v10/
 
 ## 🔄 5. Disiplin Git & Sinkronisasi
 
-1. Repositori GitHub `zzdree/zzluxora-v10` dan `zzdree/script` adalah **Single Source of Truth**.
+1. Repositori GitHub `zzdree/zzluxora-v10` dan `zzdree/zzluxora-thesis` adalah **Single Source of Truth**.
 2. Setiap fitur yang selesai diuji wajib di-commit dan di-push ke branch `main`.
 3. Di laptop utama, sinkronisasi dilakukan hanya dengan `git pull origin main`.
 

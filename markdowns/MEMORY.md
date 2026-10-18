@@ -111,7 +111,7 @@ python3 ~/ANDREAS/agent-memory/tools/memlog.py import /tmp/memlog.json
 ```
 
 **Basis data:** `~/ANDREAS/agent-memory/memlog.db` (lokasi bersama). Dulu file ini
-berada di `zzluxora_v10/memory/memlog.db`, sehingga log tidak terpakai dari
+berada di `zzluxora-v10/memory/memlog.db`, sehingga log tidak terpakai dari
 folder project lain dan satu pemanggil sempat membuat `memlog.db` kosong di
 tempat lain.
 
