@@ -22,23 +22,23 @@ dipanggil dari folder mana pun dengan path absolut.
 
 ```bash
 # simpan catatan
-python3 ~/ANDREAS/agent-memory-tools/memlog.py add --bank zzluxora --title "Judul singkat" \
+python3 ~/ANDREAS/agent-memory/tools/memlog.py add --bank zzluxora --title "Judul singkat" \
     --tag desain --body "Isi catatan yang ingin diingat."
 
 # cari lintas SEMUA project (tanpa --bank)
-python3 ~/ANDREAS/agent-memory-tools/memlog.py search "jebakan"
+python3 ~/ANDREAS/agent-memory/tools/memlog.py search "jebakan"
 # batasi ke satu project
-python3 ~/ANDREAS/agent-memory-tools/memlog.py search '"blok penuh"' --bank zzluxora
+python3 ~/ANDREAS/agent-memory/tools/memlog.py search '"blok penuh"' --bank zzluxora
 
 # lihat, daftar, sunting, hapus
-python3 ~/ANDREAS/agent-memory-tools/memlog.py show 12
-python3 ~/ANDREAS/agent-memory-tools/memlog.py list --bank zzluxora --limit 20
-python3 ~/ANDREAS/agent-memory-tools/memlog.py edit 12 --body "Isi baru"
-python3 ~/ANDREAS/agent-memory-tools/memlog.py delete 12
+python3 ~/ANDREAS/agent-memory/tools/memlog.py show 12
+python3 ~/ANDREAS/agent-memory/tools/memlog.py list --bank zzluxora --limit 20
+python3 ~/ANDREAS/agent-memory/tools/memlog.py edit 12 --body "Isi baru"
+python3 ~/ANDREAS/agent-memory/tools/memlog.py delete 12
 
 # pindahkan isi basis data
-python3 ~/ANDREAS/agent-memory-tools/memlog.py export /tmp/memlog.json
-python3 ~/ANDREAS/agent-memory-tools/memlog.py import /tmp/memlog.json
+python3 ~/ANDREAS/agent-memory/tools/memlog.py export /tmp/memlog.json
+python3 ~/ANDREAS/agent-memory/tools/memlog.py import /tmp/memlog.json
 ```
 
 **Basis data:** `~/ANDREAS/agent-memory/memlog.db` (lokasi bersama). Dulu file ini
@@ -46,7 +46,7 @@ berada di `zzluxora_v10/memory/memlog.db`, sehingga log tidak terpakai dari
 folder project lain dan satu pemanggil sempat membuat `memlog.db` kosong di
 tempat lain.
 
-**Skripnya di luar repo:** `~/ANDREAS/agent-memory-tools/memlog.py`, satu berkas, nol
+**Skripnya di luar repo:** `~/ANDREAS/agent-memory/tools/memlog.py`, satu berkas, nol
 dependensi. Dipisahkan dari repo supaya alat memori tidak ikut hilang atau
 tersalin saat repo berpindah laptop. `check-anti-slop.js` dan
 `contrast-check.py` tetap di repo karena khas per-repo.
@@ -54,7 +54,7 @@ tersalin saat repo berpindah laptop. `check-anti-slop.js` dan
 Untuk pemakaian terisolasi (uji, percobaan), set `MEMLOG_DB`:
 
 ```bash
-MEMLOG_DB=/tmp/percobaan.db python3 ~/ANDREAS/agent-memory-tools/memlog.py list
+MEMLOG_DB=/tmp/percobaan.db python3 ~/ANDREAS/agent-memory/tools/memlog.py list
 ```
 
 
@@ -88,6 +88,6 @@ prosedur siap pakai di repo ini karena tidak direncanakan.
 
 | Berkas | Fungsi |
 |---|---|
-| `~/ANDREAS/agent-memory-tools/memlog.py` | alat memori: tambah, cari, lihat, sunting, hapus, ekspor, impor |
+| `~/ANDREAS/agent-memory/tools/memlog.py` | alat memori: tambah, cari, lihat, sunting, hapus, ekspor, impor |
 | `~/ANDREAS/agent-memory/memlog.db` | basis data catatan |
 | `../memory-backup/*.zip` | arsip asli hindsight |
