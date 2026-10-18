@@ -157,6 +157,10 @@ const DOC_ERROR_PATTERNS = [
 const IGNORE_DIRS = [
   'node_modules',
   '.git',
+  '.venv',
+  'venv',
+  'env',
+  '.open-next',
   '.next',
   'dist',
   'build',
