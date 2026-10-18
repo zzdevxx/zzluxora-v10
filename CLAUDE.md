@@ -12,7 +12,7 @@ Perintah wajib:
 ```bash
 PYTHONPATH=$PWD/tools python3 tools/run_tests_guarded.py   # 177 test unik, tanpa popup
 node scripts/check-anti-slop.js --summary                 # 174 berkas
-python3 ~/ANDREAS/scripts/memlog.py search "kata kunci"              # memori agen (DB bersama ~/ANDREAS/memory/memlog.db)
+python3 ~/ANDREAS/agent-memory-tools/memlog.py search "kata kunci"              # memori agen (DB bersama ~/ANDREAS/agent-memory/memlog.db)
 ```
 
 ---

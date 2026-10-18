@@ -50,7 +50,7 @@ QT_QPA_PLATFORM=offscreen PYTHONPATH=$PWD/tools python3 -m pytest tests/ --colle
 node scripts/check-anti-slop.js --summary
 
 # memori
-python3 ~/ANDREAS/scripts/memlog.py search "kata kunci"
+python3 ~/ANDREAS/agent-memory-tools/memlog.py search "kata kunci"
 
 # TANGKAP LAYAR UI untuk penilaian visual (tanpa perlu layar sungguhan)
 QT_QPA_PLATFORM=offscreen PYTHONPATH=$PWD/tools python3 tools/shoot_ui.py --outdir /tmp/zz_shots
@@ -363,15 +363,15 @@ terbunuh bila available RAM < 1 GB.
 ## 5. Memori
 
 ### Lokasi catatan
-- **Memori Claude** (otomatis): `~/.claude/projects/-home-zzdree-ANDREAS/memory/` (indeks di `MEMORY.md`).
-- **Memlog** (SQLite, **pengganti hindsight**): `~/ANDREAS/memory/memlog.db`, **satu basis data untuk semua project**, dipisah kolom `bank` (`zzluxora`, `zzluxora_v10`, `script`, `gia-deliksari-web`). Dulu berada di `zzluxora_v10/memory/` sehingga tidak terpakai dari folder lain; kini dipindah dan lama tetap disalin di `~/ANDREAS/memory-backup/`.
+- **Memori Claude** (otomatis): `~/.claude/projects/-home-zzdree-ANDREAS/agent-memory/` (indeks di `MEMORY.md`).
+- **Memlog** (SQLite, **pengganti hindsight**): `~/ANDREAS/agent-memory/memlog.db`, **satu basis data untuk semua project**, dipisah kolom `bank` (`zzluxora`, `zzluxora_v10`, `script`, `gia-deliksari-web`). Dulu berada di `zzluxora_v10/memory/` sehingga tidak terpakai dari folder lain; kini dipindah dan lama tetap disalin di `~/ANDREAS/memory-backup/`.
 
 ```bash
 # boleh dipanggil dari folder mana pun
-python3 ~/ANDREAS/scripts/memlog.py search "kata kunci"            # lintas semua project
-python3 ~/ANDREAS/scripts/memlog.py search "kata kunci" --bank zzluxora
-python3 ~/ANDREAS/scripts/memlog.py add --bank zzluxora --title "..." --tag ... --body "..."
-python3 ~/ANDREAS/scripts/memlog.py list --limit 20
+python3 ~/ANDREAS/agent-memory-tools/memlog.py search "kata kunci"            # lintas semua project
+python3 ~/ANDREAS/agent-memory-tools/memlog.py search "kata kunci" --bank zzluxora
+python3 ~/ANDREAS/agent-memory-tools/memlog.py add --bank zzluxora --title "..." --tag ... --body "..."
+python3 ~/ANDREAS/agent-memory-tools/memlog.py list --limit 20
 
 # pemakaian terisolasi (uji): MEMLOG_DB=/tmp/coba.db python3 .../memlog.py list
 ```
@@ -386,7 +386,7 @@ Tidak bisa diringankan: 9router punya 40 model tetapi **0 embedding**, dan reran
 skrip yang hanya berguna selagi hindsight hidup (`hindsight_to_memlog.py`,
 `create_backup.py`) sudah dihapus. Total sekitar **7,5 GB** dibebaskan.
 
-Data tidak hilang, tersimpan tiga lapis: `~/ANDREAS/memory/memlog.db` (143 entri
+Data tidak hilang, tersimpan tiga lapis: `~/ANDREAS/agent-memory/memlog.db` (143 entri
 hidup), `~/ANDREAS/memory-backup/<bank>-bank.zip` (arsip transfer resmi
 hindsight, 3 bank, ~268 item), dan
 `~/ANDREAS/memory-backup/memlog-before-shared-20261017.db`. Jangan menulis
@@ -413,7 +413,7 @@ Skrip probe pernah memunculkan popup `QMessageBox` berulang di layar owner yang 
 | `core/song_library.py` | satu daftar lagu bersama Analyze/Result/Perform |
 | `tests/test_suite_hygiene.py` | penjaga agar test tidak lolos tanpa dijalankan |
 | `scripts/check-anti-slop.js` | pemindai mutu |
-| `~/ANDREAS/scripts/memlog.py` | memori agen (di luar repo, lintas project) |
+| `~/ANDREAS/agent-memory-tools/memlog.py` | memori agen (di luar repo, lintas project) |
 | `../script/notes/feedback_v4.md` | **lembar acuan tunggal.** Bagian 1-10 (6 Okt) + bagian 11-14 (17 Okt) |
 | `../script/markdowns/script_plans.md` | status naskah skripsi |
 | `../script/markdowns/script_konsultasi_pembimbing.md` | agenda konsultasi dospem |
@@ -435,7 +435,7 @@ Skrip probe pernah memunculkan popup `QMessageBox` berulang di layar owner yang 
    QT_QPA_PLATFORM=offscreen PYTHONPATH=$PWD/tools python3 tools/shoot_ui.py --outdir /tmp/zz_shots
    ```
    lalu baca PNG di `/tmp/zz_shots/`.
-4. Cari konteks relevan: `python3 ~/ANDREAS/scripts/memlog.py search "<topik>"`.
+4. Cari konteks relevan: `python3 ~/ANDREAS/agent-memory-tools/memlog.py search "<topik>"`.
 5. **Tanya owner mau lanjut ke mana.** Pilihan yang tersedia:
    **(a)** uji drag fixture dengan mouse sungguhan (sisa v5, §3),
    **(b)** kerjakan naskah Bab 4/5 dan keputusan audio,
