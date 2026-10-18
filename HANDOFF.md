@@ -363,8 +363,10 @@ terbunuh bila available RAM < 1 GB.
 ## 5. Memori
 
 ### Lokasi catatan
-- **Memori Claude** (otomatis): `~/.claude/projects/-home-zzdree-ANDREAS/agent-memory/` (indeks di `MEMORY.md`).
-- **Memlog** (SQLite, **pengganti hindsight**): `~/ANDREAS/agent-memory/memlog.db`, **satu basis data untuk semua project**, dipisah kolom `bank` (`zzluxora`, `zzluxora_v10`, `script`, `gia-deliksari-web`). Dulu berada di `zzluxora_v10/memory/` sehingga tidak terpakai dari folder lain; kini dipindah dan lama tetap disalin di `~/ANDREAS/memory-backup/`.
+- **Memori Claude** (dimuat otomatis): `~/.claude/projects/-home-zzdree-ANDREAS/memory/` (indeks di `MEMORY.md`). Tidak di git.
+- **Memlog** (SQLite, **pengganti hindsight**): `~/ANDREAS/agent-memory/memlog.db`, **satu basis data untuk semua project**, dipisah kolom `bank`. Sumber kebenaran ada di `~/ANDREAS/agent-memory/notes/*.md` (di git); DB hanyalah cache yang bisa dihapus dan dibangun ulang.
+
+**Sejak 18 Okt 2026 (memlog v2), auto-memory disalin ke memlog secara otomatis.** `hooks/memlog_sync_hook.py` berjalan di Stop dan PreCompact, mengimpor berkas yang berubah dari auto-memory, lalu mencerminkan DB ke `notes/`. Tidak perlu tindakan manual; `import_auto_memory.py` hanya untuk impor paksa seluruh folder.
 
 ```bash
 # boleh dipanggil dari folder mana pun
