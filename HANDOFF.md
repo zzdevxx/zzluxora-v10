@@ -26,13 +26,14 @@ Dokumen ini untuk agent yang melanjutkan pekerjaan ZZLUXORA. Baca ini dulu sebel
 
 | | |
 |---|---|
-| Software `zzdree/zzluxora-v10` | HEAD **`adbd759`**, working tree **bersih**, sinkron `origin/main` |
+| Software `zzdree/zzluxora-v10` | HEAD **`1d28bf8`**, working tree **bersih**, sinkron `origin/main` |
 | Naskah `zzdree/zzluxora-thesis` | HEAD **`b2fbbc7`**, bersih, sinkron (Bab 4 & 5 naskah v5 terisi data empiris) |
 | Hardware `zzdree/esp32-artnet-dmx` | HEAD **`cddd36f`**, bersih, sinkron (firmware v4.0.1 pacing absolut & packet counter) |
 | Test suite | **194 test unik lulus** (163 unittest + 31 pytest), exit 0 · jumlah wajib diperiksa, lihat §2c |
 | Skenario Tab | **38/38 skenario per tab LULUS 100%** (`python3 tools/run_all_tab_scenarios.py`) |
 | Skenario Ekstrem | **8/8 skenario lanjut & edge-case LULUS 100%** (`python3 tools/test_advanced_scenarios.py`) |
-| Anti-slop | **189 berkas, 0 error, 0 warning** |
+| Skenario Undo/Redo | **5/5 skenario context-aware Undo/Redo LULUS 100%** (`python3 tools/test_global_undo_redo.py`) |
+| Anti-slop | **204 berkas, 0 error, 0 warning** |
 | Uji Black-Box | **100,0% Pass Rate** (23 kasus software lulus dari 23 kasus; FB-24 N/A [VERIFIKASI LAPANGAN]) |
 | Integrasi Ekosistem | **Tritunggal Sistem saling terhubung (cross-linked)** di seluruh README dan memori |
 
@@ -40,6 +41,9 @@ Dokumen ini untuk agent yang melanjutkan pekerjaan ZZLUXORA. Baca ini dulu sebel
 
 ```bash
 cd ~/ANDREAS/zzluxora_v10
+
+# uji Smart Context-Aware Undo/Redo (QLC+ & grandMA style)
+python3 tools/test_global_undo_redo.py
 
 # uji 38 skenario per tab (Address s.d. Mixer)
 python3 tools/run_all_tab_scenarios.py
