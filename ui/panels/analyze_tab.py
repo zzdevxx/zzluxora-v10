@@ -19,6 +19,7 @@ from ui.qt_compat import (
 from ui.styles import Theme
 from core.song_library import SongLibrary
 from ui.widgets.youtube_dialog import YouTubeDialog
+from ui.widgets.song_list_panel import SongListPanel, AddSongDialog
 from core.audio_loader import AudioLoader
 from core.feature_extractor import FeatureExtractor
 from core.emotion_model import EmotionModel
@@ -287,11 +288,6 @@ class AnalyzeTab(QWidget if HAS_QT else object):
         self.btn_import_yt.clicked.connect(self._on_open_youtube_dialog)
         top_bar.addWidget(self.btn_import_yt)
 
-        self.btn_remove = QPushButton("REMOVE SONG")
-        self.btn_remove.setEnabled(False)
-        self.btn_remove.clicked.connect(self._on_remove_song)
-        top_bar.addWidget(self.btn_remove)
-
         self.btn_analyze = QPushButton("ANALYZE")
         self.btn_analyze.setStyleSheet(f"background-color: {Theme.STATUS_SUCCESS_BG}; color: {Theme.COLOR_SUCCESS}; font-weight: bold;")
         self.btn_analyze.setEnabled(False)
@@ -304,27 +300,12 @@ class AnalyzeTab(QWidget if HAS_QT else object):
         splitter = QSplitter(Qt.Horizontal)
         splitter.setStyleSheet(f"QSplitter::handle {{ background-color: {Theme.BORDER_SUBTLE}; }}")
 
-        # Left Container: Song List
-        left_box = QGroupBox("Session Audio Playlist")
-        left_box.setStyleSheet(f"QGroupBox {{ font-weight: 700; color: {Theme.TEXT_PRIMARY}; }}")
-        left_layout = QVBoxLayout(left_box)
-        self.song_list_widget = QListWidget()
-        self.song_list_widget.setStyleSheet(f"""
-            QListWidget {{
-                background-color: {Theme.BG_SURFACE};
-                border: 1px solid {Theme.BORDER_SUBTLE};
-                border-radius: 4px;
-                color: {Theme.TEXT_PRIMARY};
-            }}
-            QListWidget::item:selected {{
-                background-color: {Theme.BG_ELEVATED};
-                color: {Theme.TEXT_PRIMARY};
-            }}
-        """)
-        self.song_list_widget.currentRowChanged.connect(self._on_song_selected)
-        left_layout.addWidget(self.song_list_widget)
-        splitter.addWidget(left_box)
-        self._refresh_song_list()
+        # Left Container: Standardized Song List Panel
+        self.song_panel = SongListPanel(self.song_library, self)
+        self.song_list_widget = self.song_panel.list_widget
+        self.btn_remove = self.song_panel.btn_remove  # backward compatibility alias
+        self.song_panel.song_selected.connect(self._on_song_selected)
+        splitter.addWidget(self.song_panel)
 
         # Right Container: Analysis Visualization & Status
         right_box = QGroupBox("DSP Engine & Russell 2D Affective Plane")
@@ -386,56 +367,47 @@ class AnalyzeTab(QWidget if HAS_QT else object):
         dlg.exec()
 
     def _refresh_song_list(self) -> None:
-        """Repaint this tab's list from the shared library.
-
-        Rebuilt wholesale rather than patched row by row: the library can add,
-        remove and reorder in one action, and a row-by-row update would have to
-        reproduce all three to stay in step.
-        """
-        widget = getattr(self, "song_list_widget", None)
-        if widget is None:
-            return
-        widget.blockSignals(True)
-        widget.clear()
-        for entry in self.song_library.songs:
-            widget.addItem(f"{entry.name}\n     {entry.summary()}")
-        widget.setCurrentRow(self.song_library.selected_index)
-        widget.blockSignals(False)
+        """Repaint this tab's list from the shared library."""
+        if hasattr(self, "song_panel"):
+            self.song_panel.refresh_list()
 
     def _on_library_selection(self, index: int) -> None:
         """Follow a selection made in another tab."""
-        widget = getattr(self, "song_list_widget", None)
-        if widget is None:
-            return
-        if widget.currentRow() != index:
-            widget.blockSignals(True)
-            widget.setCurrentRow(index)
-            widget.blockSignals(False)
+        if hasattr(self, "song_panel"):
+            self.song_panel._on_library_selection_changed(index)
         has_sel = 0 <= index < len(self.song_library)
         self.btn_analyze.setEnabled(has_sel)
-        self.btn_remove.setEnabled(has_sel)
 
     def _add_audio_path(self, path_str: str) -> None:
         """Add a track to the shared list, which repaints every tab's view."""
         self.song_library.add_path(path_str)
         self.btn_analyze.setEnabled(True)
-        self.btn_remove.setEnabled(True)
         self.lbl_dsp_status.setText(f"Track ready: {Path(path_str).name}")
 
     def _on_song_selected(self, row: int) -> None:
         """Mirror the list widget's selection into the shared library."""
-        self.song_library.select(row)
-        has_sel = row >= 0 and row < len(self.song_library)
+        has_sel = 0 <= row < len(self.song_library)
         self.btn_analyze.setEnabled(has_sel)
-        self.btn_remove.setEnabled(has_sel)
+        if has_sel:
+            entry = self.song_library.songs[row]
+            if entry.is_analyzed and isinstance(entry.analysis, dict):
+                res = entry.analysis
+                v = float(res.get("valence", 0.0))
+                a = float(res.get("arousal", 0.0))
+                quad = str(res.get("quadrant", "Idle"))
+                self.russell_plane.set_coordinates(v, a, quad)
+                bpm = res.get("bpm", 0.0)
+                rms = res.get("rms", 0.0)
+                key = res.get("chroma_key", "-")
+                self.stats_label.setText(
+                    f"Track: {entry.title}\n"
+                    f"BPM: {bpm:.1f} | RMS: {rms:.4f} | Tonality: {key}\n"
+                    f"Mood: {quad} (Valence: {v:+.2f}, Arousal: {a:+.2f})"
+                )
 
     def _on_remove_song(self) -> None:
-        row = self.song_list_widget.currentRow()
-        if 0 <= row < len(self.song_library):
-            self.song_library.remove([row])
-            remaining = len(self.song_library) > 0
-            self.btn_analyze.setEnabled(remaining)
-            self.btn_remove.setEnabled(remaining)
+        if hasattr(self, "song_panel"):
+            self.song_panel._on_remove_clicked()
 
     def _on_start_analysis(self) -> None:
         if self.worker is not None and self.worker.isRunning():

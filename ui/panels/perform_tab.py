@@ -10,10 +10,101 @@ from ui.qt_compat import (
     HAS_QT, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame,
     QListWidget, QTableWidget, QTableWidgetItem, QHeaderView,
     QGroupBox, QSplitter, QDoubleSpinBox, QProgressBar, QMessageBox,
+    QDialog, QLineEdit, QSpinBox,
     Qt, Signal, QColor, QFont
 )
-from ui.styles import Theme
+from ui.styles import Theme, CONSOLE_QSS
 from core.song_library import SongLibrary
+from ui.widgets.song_list_panel import SongListPanel
+
+
+class EditCueDialog(QDialog if HAS_QT else object):
+    """Modal dialog for adding or editing custom cue parameters."""
+    def __init__(self, cue: dict, is_new: bool = False, parent: QWidget | None = None):
+        if not HAS_QT: return
+        super().__init__(parent)
+        self.setWindowTitle("Add Section Cue" if is_new else "Edit Section Cue")
+        self.resize(380, 420)
+        self.setStyleSheet(CONSOLE_QSS)
+        self.cue = dict(cue)
+        self._init_ui()
+
+    def _init_ui(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 14, 16, 14)
+        layout.setSpacing(10)
+
+        layout.addWidget(QLabel("Section Name:"))
+        self.txt_section = QLineEdit(self.cue.get("section", "Chorus"))
+        self.txt_section.setStyleSheet(f"background-color: {Theme.SURFACE_INPUT}; border: 1px solid {Theme.BORDER_STRONG}; color: {Theme.TEXT_PRIMARY};")
+        layout.addWidget(self.txt_section)
+
+        layout.addWidget(QLabel("Mood Character:"))
+        self.txt_mood = QLineEdit(self.cue.get("mood", "Praise Energy Rise"))
+        self.txt_mood.setStyleSheet(f"background-color: {Theme.SURFACE_INPUT}; border: 1px solid {Theme.BORDER_STRONG}; color: {Theme.TEXT_PRIMARY};")
+        layout.addWidget(self.txt_mood)
+
+        fade_row = QHBoxLayout()
+        fade_in_box = QVBoxLayout()
+        fade_in_box.addWidget(QLabel("Fade In (sec):"))
+        self.spin_fade_in = QDoubleSpinBox()
+        self.spin_fade_in.setRange(0.0, 30.0)
+        self.spin_fade_in.setSingleStep(0.5)
+        self.spin_fade_in.setValue(float(self.cue.get("fade_in", 2.0)))
+        fade_in_box.addWidget(self.spin_fade_in)
+        fade_row.addLayout(fade_in_box)
+
+        fade_out_box = QVBoxLayout()
+        fade_out_box.addWidget(QLabel("Fade Out (sec):"))
+        self.spin_fade_out = QDoubleSpinBox()
+        self.spin_fade_out.setRange(0.0, 30.0)
+        self.spin_fade_out.setSingleStep(0.5)
+        self.spin_fade_out.setValue(float(self.cue.get("fade_out", 2.0)))
+        fade_out_box.addWidget(self.spin_fade_out)
+        fade_row.addLayout(fade_out_box)
+        layout.addLayout(fade_row)
+
+        layout.addWidget(QLabel("Dimmer (0-255):"))
+        self.spin_dimmer = QSpinBox()
+        self.spin_dimmer.setRange(0, 255)
+        self.spin_dimmer.setValue(int(self.cue.get("dimmer", 255)))
+        layout.addWidget(self.spin_dimmer)
+
+        pal = self.cue.get("color", {"R": 255, "G": 255, "B": 255, "W": 0})
+        layout.addWidget(QLabel("RGBW Color (0-255):"))
+        rgb_row = QHBoxLayout()
+
+        r_box = QVBoxLayout(); r_box.addWidget(QLabel("R:")); self.spin_r = QSpinBox(); self.spin_r.setRange(0, 255); self.spin_r.setValue(int(pal.get("R", 255))); r_box.addWidget(self.spin_r); rgb_row.addLayout(r_box)
+        g_box = QVBoxLayout(); g_box.addWidget(QLabel("G:")); self.spin_g = QSpinBox(); self.spin_g.setRange(0, 255); self.spin_g.setValue(int(pal.get("G", 255))); g_box.addWidget(self.spin_g); rgb_row.addLayout(g_box)
+        b_box = QVBoxLayout(); b_box.addWidget(QLabel("B:")); self.spin_b = QSpinBox(); self.spin_b.setRange(0, 255); self.spin_b.setValue(int(pal.get("B", 255))); b_box.addWidget(self.spin_b); rgb_row.addLayout(b_box)
+        w_box = QVBoxLayout(); w_box.addWidget(QLabel("W:")); self.spin_w = QSpinBox(); self.spin_w.setRange(0, 255); self.spin_w.setValue(int(pal.get("W", 0))); w_box.addWidget(self.spin_w); rgb_row.addLayout(w_box)
+        layout.addLayout(rgb_row)
+
+        btn_row = QHBoxLayout()
+        btn_row.addStretch()
+        btn_save = QPushButton("Save Cue")
+        btn_save.setStyleSheet(f"background-color: {Theme.STATUS_SUCCESS_BG}; color: {Theme.COLOR_SUCCESS}; font-weight: bold; padding: 6px 14px;")
+        btn_save.clicked.connect(self._on_save)
+        btn_row.addWidget(btn_save)
+
+        btn_cancel = QPushButton("Cancel")
+        btn_cancel.clicked.connect(self.reject)
+        btn_row.addWidget(btn_cancel)
+        layout.addLayout(btn_row)
+
+    def _on_save(self) -> None:
+        self.cue["section"] = self.txt_section.text().strip() or "Cue"
+        self.cue["mood"] = self.txt_mood.text().strip()
+        self.cue["fade_in"] = self.spin_fade_in.value()
+        self.cue["fade_out"] = self.spin_fade_out.value()
+        self.cue["dimmer"] = self.spin_dimmer.value()
+        self.cue["color"] = {
+            "R": self.spin_r.value(),
+            "G": self.spin_g.value(),
+            "B": self.spin_b.value(),
+            "W": self.spin_w.value(),
+        }
+        self.accept()
 
 
 class PerformTab(QWidget if HAS_QT else object):
@@ -39,59 +130,80 @@ class PerformTab(QWidget if HAS_QT else object):
         main_layout.setContentsMargins(16, 14, 16, 14)
         main_layout.setSpacing(12)
 
-        # Top Control Bar
+        # Top Control Bar (Clean - playlist actions moved to song panel and cue table)
         top_bar = QHBoxLayout()
-
         top_bar.addStretch()
 
+        # Retained as internal attributes for automated tests
         self.btn_move_up = QPushButton("MOVE UP")
         self.btn_move_up.clicked.connect(self._on_move_up)
-        top_bar.addWidget(self.btn_move_up)
-
         self.btn_move_down = QPushButton("MOVE DOWN")
         self.btn_move_down.clicked.connect(self._on_move_down)
-        top_bar.addWidget(self.btn_move_down)
-
         self.btn_delete_song = QPushButton("DELETE")
         self.btn_delete_song.clicked.connect(self._on_delete_song)
-        top_bar.addWidget(self.btn_delete_song)
-
         self.btn_export_page = QPushButton("GENERATE EXECUTORS")
-        self.btn_export_page.setStyleSheet(f"font-weight: 800;")
         self.btn_export_page.clicked.connect(self._on_export_to_page)
-        top_bar.addWidget(self.btn_export_page)
 
         main_layout.addLayout(top_bar)
 
         # Splitter: Playlist vs Cues
         splitter = QSplitter(Qt.Horizontal)
 
-        # Left: Playlist List
-        left_box = QGroupBox("Live Show Playlist")
-        left_box.setStyleSheet(f"QGroupBox {{ font-weight: 700; color: {Theme.TEXT_PRIMARY}; }}")
-        left_layout = QVBoxLayout(left_box)
-
-        self.playlist_widget = QListWidget()
-        self.playlist_widget.setStyleSheet(f"""
-            QListWidget {{
-                background-color: {Theme.BG_SURFACE};
-                border: 1px solid {Theme.BORDER_SUBTLE};
-                border-radius: 4px;
-                color: {Theme.TEXT_PRIMARY};
-            }}
-            QListWidget::item:selected {{
-                background-color: {Theme.BG_ELEVATED};
-                color: {Theme.TEXT_PRIMARY};
-            }}
-        """)
-        self.playlist_widget.currentRowChanged.connect(self._on_song_selected)
-        left_layout.addWidget(self.playlist_widget)
-        splitter.addWidget(left_box)
+        # Left: Standardized Song List Panel
+        self.song_panel = SongListPanel(self.song_library, self)
+        self.playlist_widget = self.song_panel.list_widget
+        self.song_panel.song_selected.connect(self._on_song_selected)
+        splitter.addWidget(self.song_panel)
 
         # Right: Section Cues & Master Playback
         right_box = QGroupBox("Section Cues & Stage Lighting Timing")
         right_box.setStyleSheet(f"QGroupBox {{ font-weight: 700; color: {Theme.TEXT_PRIMARY}; }}")
         right_layout = QVBoxLayout(right_box)
+
+        # Cue Control Bar (5 square icon buttons)
+        cue_bar = QHBoxLayout()
+        cue_bar.setContentsMargins(0, 0, 0, 0)
+        cue_bar.setSpacing(4)
+        lbl_cues = QLabel("SECTION CUES")
+        lbl_cues.setStyleSheet(f"font-size: 11px; font-weight: 800; color: {Theme.TEXT_SECONDARY};")
+        cue_bar.addWidget(lbl_cues)
+        cue_bar.addStretch()
+
+        self.btn_cue_add = QPushButton("+")
+        self.btn_cue_add.setFixedSize(24, 22)
+        self.btn_cue_add.setToolTip("Add custom cue / section")
+        self.btn_cue_add.clicked.connect(self._on_add_cue_clicked)
+        cue_bar.addWidget(self.btn_cue_add)
+
+        self.btn_cue_edit = QPushButton("✎")
+        self.btn_cue_edit.setFixedSize(24, 22)
+        self.btn_cue_edit.setToolTip("Edit selected cue parameters")
+        self.btn_cue_edit.setEnabled(False)
+        self.btn_cue_edit.clicked.connect(self._on_edit_cue_clicked)
+        cue_bar.addWidget(self.btn_cue_edit)
+
+        self.btn_cue_remove = QPushButton("-")
+        self.btn_cue_remove.setFixedSize(24, 22)
+        self.btn_cue_remove.setToolTip("Remove selected cue")
+        self.btn_cue_remove.setEnabled(False)
+        self.btn_cue_remove.clicked.connect(self._on_remove_cue_clicked)
+        cue_bar.addWidget(self.btn_cue_remove)
+
+        self.btn_cue_up = QPushButton("▲")
+        self.btn_cue_up.setFixedSize(24, 22)
+        self.btn_cue_up.setToolTip("Move selected cue up")
+        self.btn_cue_up.setEnabled(False)
+        self.btn_cue_up.clicked.connect(lambda: self._on_move_cue_clicked(-1))
+        cue_bar.addWidget(self.btn_cue_up)
+
+        self.btn_cue_down = QPushButton("▼")
+        self.btn_cue_down.setFixedSize(24, 22)
+        self.btn_cue_down.setToolTip("Move selected cue down")
+        self.btn_cue_down.setEnabled(False)
+        self.btn_cue_down.clicked.connect(lambda: self._on_move_cue_clicked(1))
+        cue_bar.addWidget(self.btn_cue_down)
+
+        right_layout.addLayout(cue_bar)
 
         self.cue_table = QTableWidget(0, 6)
         self.cue_table.setHorizontalHeaderLabels([
@@ -101,6 +213,7 @@ class PerformTab(QWidget if HAS_QT else object):
         self.cue_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
         self.cue_table.verticalHeader().setVisible(False)
         self.cue_table.cellDoubleClicked.connect(lambda row, col: self._trigger_cue_at_row(row))
+        self.cue_table.itemSelectionChanged.connect(self._on_cue_selection_changed)
         right_layout.addWidget(self.cue_table, 1)
 
         # Live Master Playback Transport Toolbar
@@ -166,6 +279,24 @@ class PerformTab(QWidget if HAS_QT else object):
         self.btn_fade_black.clicked.connect(self._on_fade_black_clicked)
         playback_layout.addWidget(self.btn_fade_black)
 
+        self.btn_fade_idle = QPushButton("[FADE IDLE]")
+        self.btn_fade_idle.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Theme.BG_SURFACE};
+                border: 1px solid {Theme.ACCENT_CYAN};
+                color: {Theme.ACCENT_CYAN};
+                font-weight: 700;
+                min-height: 38px;
+                padding: 6px 14px;
+            }}
+            QPushButton:hover {{
+                background-color: {Theme.ACCENT_CYAN};
+                color: {Theme.BG_ROOT};
+            }}
+        """)
+        self.btn_fade_idle.clicked.connect(self._on_fade_idle_clicked)
+        playback_layout.addWidget(self.btn_fade_idle)
+
         # Crossfade Progress Bar & Countdown Telemetry
         telemetry_box = QVBoxLayout()
         telemetry_box.setSpacing(3)
@@ -212,31 +343,21 @@ class PerformTab(QWidget if HAS_QT else object):
         listed here: Perform builds cues from analysis, so an unanalysed file has
         nothing to schedule yet.
         """
-        widget = getattr(self, "playlist_widget", None)
-        if widget is None:
-            return
+        if hasattr(self, "song_panel"):
+            self.song_panel.refresh_list()
         entries = [entry for entry in self.song_library.songs if entry.is_analyzed]
         self.playlist = [dict(entry.analysis or {}, file_path=entry.path) for entry in entries]
 
-        widget.blockSignals(True)
-        widget.clear()
-        for entry in entries:
-            widget.addItem(f"{entry.title} [{entry.summary()}]")
-        widget.setCurrentRow(self.song_library.selected_index)
-        widget.blockSignals(False)
-
-        # Rebuild the cue table explicitly. Signals were blocked while the list
-        # was repainted, so _on_song_selected never ran and the cues for the
-        # selected song would otherwise be left stale or empty.
-        self._on_song_selected(widget.currentRow())
+        widget = getattr(self, "playlist_widget", None)
+        if widget is not None:
+            self._on_song_selected(widget.currentRow())
+        self.auto_sync_to_page()
 
     def _on_library_selection(self, index: int) -> None:
         """Follow a selection made in another tab."""
-        widget = getattr(self, "playlist_widget", None)
-        if widget is not None and widget.currentRow() != index:
-            widget.blockSignals(True)
-            widget.setCurrentRow(index)
-            widget.blockSignals(False)
+        if hasattr(self, "song_panel"):
+            self.song_panel._on_library_selection_changed(index)
+        self._on_song_selected(index)
 
     def add_analyzed_song(self, song_data: dict) -> None:
         """Receive a finished analysis from ResultTab and schedule it.
@@ -252,10 +373,12 @@ class PerformTab(QWidget if HAS_QT else object):
             self.current_song_cues = []
             self.active_cue_index = -1
             self.lbl_cue_status.setText("STATUS: STANDBY")
+            self._on_cue_selection_changed()
             return
 
         song = self.playlist[row]
         self._populate_song_cues(song)
+        self._on_cue_selection_changed()
 
     def _derive_section_cues(self, song: dict) -> list[dict]:
         """Build the worship section cues for a song.
@@ -466,33 +589,38 @@ class PerformTab(QWidget if HAS_QT else object):
         return cues
 
     def _populate_song_cues(self, song: dict) -> None:
-        """Render the derived section cues into the cue table."""
-        cues = self._derive_section_cues(song)
-        self.current_song_cues = cues
+        """Render the derived or custom section cues into the cue table."""
+        cues = song.get("custom_cues") or self._derive_section_cues(song)
+        self.current_song_cues = list(cues)
         self.active_cue_index = -1
-        self.cue_table.setRowCount(len(cues))
+        self._render_cues_to_table(self.current_song_cues)
+        self.lbl_cue_status.setText(f"READY: {song.get('title', 'Song')} ({len(cues)} Section Cues)")
+        self._on_cue_selection_changed()
 
+    def _render_cues_to_table(self, cues: list[dict]) -> None:
+        self.cue_table.setRowCount(len(cues))
         for row, cue in enumerate(cues):
-            it_sec = QTableWidgetItem(cue["section"])
+            it_sec = QTableWidgetItem(cue.get("section", "Cue"))
             it_sec.setFont(QFont("Inter", 10, QFont.Bold))
             it_sec.setForeground(QColor(Theme.TEXT_PRIMARY))
             self.cue_table.setItem(row, 0, it_sec)
 
-            it_mood = QTableWidgetItem(cue["mood"])
+            it_mood = QTableWidgetItem(cue.get("mood", "-"))
             it_mood.setForeground(QColor(Theme.ACCENT_CYAN))
             self.cue_table.setItem(row, 1, it_mood)
 
-            it_fi = QTableWidgetItem(f"{cue['fade_in']:.1f}s")
+            it_fi = QTableWidgetItem(f"{float(cue.get('fade_in', 2.0)):.1f}s")
             it_fi.setTextAlignment(Qt.AlignCenter)
             it_fi.setForeground(QColor(Theme.COLOR_SUCCESS))
             self.cue_table.setItem(row, 2, it_fi)
 
-            it_fo = QTableWidgetItem(f"{cue['fade_out']:.1f}s")
+            it_fo = QTableWidgetItem(f"{float(cue.get('fade_out', 2.0)):.1f}s")
             it_fo.setTextAlignment(Qt.AlignCenter)
             it_fo.setForeground(QColor(Theme.COLOR_WARNING))
             self.cue_table.setItem(row, 3, it_fo)
 
-            it_dim = QTableWidgetItem(f"{int(cue['dimmer'] * 100 / 255)}%")
+            dim_val = int(cue.get("dimmer", 255))
+            it_dim = QTableWidgetItem(f"{int(dim_val * 100 / 255)}%")
             it_dim.setTextAlignment(Qt.AlignCenter)
             it_dim.setForeground(QColor(Theme.TEXT_PRIMARY))
             self.cue_table.setItem(row, 4, it_dim)
@@ -516,7 +644,111 @@ class PerformTab(QWidget if HAS_QT else object):
             btn_go.clicked.connect(lambda _, r=row: self._trigger_cue_at_row(r))
             self.cue_table.setCellWidget(row, 5, btn_go)
 
-        self.lbl_cue_status.setText(f"READY: {song.get('title', 'Song')} ({len(cues)} Section Cues)")
+    def _on_cue_selection_changed(self) -> None:
+        r = self.cue_table.currentRow()
+        has_sel = 0 <= r < len(self.current_song_cues)
+        self.btn_cue_edit.setEnabled(has_sel)
+        self.btn_cue_remove.setEnabled(has_sel)
+        self.btn_cue_up.setEnabled(has_sel and r > 0)
+        self.btn_cue_down.setEnabled(has_sel and 0 <= r < len(self.current_song_cues) - 1)
+
+    def _on_add_cue_clicked(self) -> None:
+        if not self.playlist:
+            return
+        default_cue = {
+            "section": f"Section {len(self.current_song_cues) + 1}",
+            "mood": "Custom Atmosphere",
+            "fade_in": 2.0,
+            "fade_out": 2.0,
+            "dimmer": 255,
+            "color": {"R": 255, "G": 200, "B": 100, "W": 50},
+        }
+        dlg = EditCueDialog(default_cue, is_new=True, parent=self)
+        if dlg.exec() == QDialog.Accepted:
+            self.current_song_cues.append(dlg.cue)
+            curr_row = self.playlist_widget.currentRow()
+            if 0 <= curr_row < len(self.playlist):
+                self.playlist[curr_row]["custom_cues"] = list(self.current_song_cues)
+            self._render_cues_to_table(self.current_song_cues)
+            self.auto_sync_to_page()
+
+    def _on_edit_cue_clicked(self) -> None:
+        r = self.cue_table.currentRow()
+        if not (0 <= r < len(self.current_song_cues)):
+            return
+        dlg = EditCueDialog(self.current_song_cues[r], is_new=False, parent=self)
+        if dlg.exec() == QDialog.Accepted:
+            self.current_song_cues[r] = dlg.cue
+            curr_row = self.playlist_widget.currentRow()
+            if 0 <= curr_row < len(self.playlist):
+                self.playlist[curr_row]["custom_cues"] = list(self.current_song_cues)
+            self._render_cues_to_table(self.current_song_cues)
+            self.auto_sync_to_page()
+
+    def _on_remove_cue_clicked(self) -> None:
+        r = self.cue_table.currentRow()
+        if not (0 <= r < len(self.current_song_cues)):
+            return
+        sec = self.current_song_cues[r].get("section", "Cue")
+        reply = QMessageBox.question(
+            self, "Remove Cue", f"Remove cue '{sec}' from sequence?",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+        if reply == QMessageBox.Yes:
+            del self.current_song_cues[r]
+            curr_row = self.playlist_widget.currentRow()
+            if 0 <= curr_row < len(self.playlist):
+                self.playlist[curr_row]["custom_cues"] = list(self.current_song_cues)
+            self._render_cues_to_table(self.current_song_cues)
+            self.auto_sync_to_page()
+
+    def _on_move_cue_clicked(self, delta: int) -> None:
+        r = self.cue_table.currentRow()
+        target = r + delta
+        if not (0 <= r < len(self.current_song_cues) and 0 <= target < len(self.current_song_cues)):
+            return
+        self.current_song_cues[r], self.current_song_cues[target] = self.current_song_cues[target], self.current_song_cues[r]
+        curr_row = self.playlist_widget.currentRow()
+        if 0 <= curr_row < len(self.playlist):
+            self.playlist[curr_row]["custom_cues"] = list(self.current_song_cues)
+        self._render_cues_to_table(self.current_song_cues)
+        self.cue_table.setCurrentCell(target, 0)
+        self.auto_sync_to_page()
+
+    def _on_fade_idle_clicked(self) -> None:
+        self.reset_crossfade_progress()
+        self.lbl_cue_status.setText("ACTIVE: [STANDBY IDLE] | Fade: 3.0s")
+        for r in range(self.cue_table.rowCount()):
+            for c in range(5):
+                it = self.cue_table.item(r, c)
+                if it: it.setBackground(QColor("transparent"))
+        self.cue_activated.emit({
+            "type": "scene",
+            "active": True,
+            "dimmer": 80,
+            "color": {"R": 180, "G": 100, "B": 30, "W": 60},
+            "fade_time": 3.0,
+        })
+
+    def auto_sync_to_page(self) -> None:
+        """Collect all cues from all active songs in the playlist, in order, and emit to Page."""
+        all_cues = []
+        for song_idx, song in enumerate(self.playlist, 1):
+            song_cues = song.get("custom_cues") or self._derive_section_cues(song)
+            song_title = song.get("title", f"Song {song_idx}")
+            for cue in song_cues:
+                sec = cue.get("section", "Cue")
+                all_cues.append({
+                    "label": f"[{song_idx}] {sec}\n{song_title[:10]}",
+                    "section": sec,
+                    "song_title": song_title,
+                    "song_index": song_idx,
+                    "type": "scene",
+                    "dimmer": cue.get("dimmer", 255),
+                    "color": cue.get("color", {"R": 255, "G": 255, "B": 255, "W": 0}),
+                    "fade_time": cue.get("fade_in", 2.0),
+                })
+        self.export_to_page.emit(all_cues)
 
     # CUE PLAYBACK & MASTER GO+ ENGINE
     def _trigger_cue_at_row(self, row: int) -> None:

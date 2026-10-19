@@ -33,7 +33,7 @@ class MixerTab(QWidget if HAS_QT else object):
         main_layout.setContentsMargins(16, 14, 16, 14)
         main_layout.setSpacing(12)
 
-        # Top Control Bar
+        # Top Control Bar (Clean & Focused on Stage Safety)
         top_bar = QHBoxLayout()
 
         top_bar.addStretch()
@@ -42,14 +42,11 @@ class MixerTab(QWidget if HAS_QT else object):
         self.btn_reset_all.clicked.connect(self._reset_dmx_channels)
         top_bar.addWidget(self.btn_reset_all)
 
+        # Retained as internal attributes for backwards compatibility
         self.btn_full_master = QPushButton("FULL MASTER")
-        self.btn_full_master.setStyleSheet(f"font-weight: 600;")
         self.btn_full_master.clicked.connect(lambda: self.set_channel_value(0, 255))
-        top_bar.addWidget(self.btn_full_master)
-
         self.btn_refresh = QPushButton("REFRESH")
         self.btn_refresh.clicked.connect(self.refresh_display)
-        top_bar.addWidget(self.btn_refresh)
 
         main_layout.addLayout(top_bar)
 
@@ -89,11 +86,11 @@ class MixerTab(QWidget if HAS_QT else object):
 
         desk_container.addWidget(master_frame)
 
-        # 2. 256 DMX Channels Deck (Bank Bar + Horizontally Scrollable Faders)
+        # 2. 512 DMX Channels Deck (Bank Bar + Horizontally Scrollable Faders)
         channels_pane = QVBoxLayout()
         channels_pane.setSpacing(6)
 
-        # Fader Bank Quick-Jump Bar (grandMA3 style)
+        # Fader Bank Quick-Jump Bar (grandMA3 style - 8 banks of 64 channels = 512 channels)
         bank_bar = QHBoxLayout()
         bank_bar.setSpacing(6)
 
@@ -104,13 +101,14 @@ class MixerTab(QWidget if HAS_QT else object):
         self.bank_buttons: list[tuple[QPushButton, int, int]] = []
         self.active_bank_index = 0
         banks = [
-            ("BANK 1 (1-16)", 1, 16),
-            ("BANK 2 (17-32)", 17, 32),
-            ("BANK 3 (33-48)", 33, 48),
-            ("BANK 4 (49-64)", 49, 64),
-            ("BANK 5 (65-128)", 65, 128),
-            ("BANK 6 (129-192)", 129, 192),
-            ("BANK 7 (193-256)", 193, 256),
+            ("BANK 1 (1-64)", 1, 64),
+            ("BANK 2 (65-128)", 65, 128),
+            ("BANK 3 (129-192)", 129, 192),
+            ("BANK 4 (193-256)", 193, 256),
+            ("BANK 5 (257-320)", 257, 320),
+            ("BANK 6 (321-384)", 321, 384),
+            ("BANK 7 (385-448)", 385, 448),
+            ("BANK 8 (449-512)", 449, 512),
         ]
         for b_name, start_ch, end_ch in banks:
             btn_b = QPushButton(b_name)
@@ -157,8 +155,8 @@ class MixerTab(QWidget if HAS_QT else object):
         channels_layout.setContentsMargins(10, 8, 10, 8)
         channels_layout.setSpacing(6)
 
-        # Populate 256 DMX channels
-        for ch in range(1, 257):
+        # Populate full 512 DMX channels
+        for ch in range(1, 513):
             fader = TactileFader(channel_id=ch, label=f"Ch {ch}", initial_value=0, is_master=False, parent=channels_container)
             fader.valueChanged.connect(self._on_fader_value_changed)
             self.faders[ch] = fader
@@ -177,7 +175,7 @@ class MixerTab(QWidget if HAS_QT else object):
         fader_step = 58
         viewport_width = max(1, self.scroll_area.viewport().width())
         first_visible = max(1, 1 + (scroll_x // fader_step))
-        last_visible = min(256, first_visible + max(0, viewport_width // fader_step))
+        last_visible = min(512, first_visible + max(0, viewport_width // fader_step))
         best_index = 0
         best_overlap = -1
         for bank_index, (_, start_ch, end_ch) in enumerate(self.bank_buttons):
@@ -291,13 +289,13 @@ class MixerTab(QWidget if HAS_QT else object):
         self._reset_dmx_channels()
 
     def _reset_dmx_channels(self) -> None:
-        """Sets channels 1-256 to 0 while preserving Grand Master.
+        """Sets channels 1-512 to 0 while preserving Grand Master.
 
-        Uses the silent setter: emitting valueChanged for 256 faders would make
+        Uses the silent setter: emitting valueChanged for 512 faders would make
         the shell transmit one Art-Net packet per channel, so a single blackout
         would burst hundreds of frames onto the wire.
         """
-        for ch in range(1, 257):
+        for ch in range(1, 513):
             self.faders[ch].set_value_silent(0)
 
     def refresh_display(self) -> None:

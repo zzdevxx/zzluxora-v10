@@ -217,6 +217,7 @@ class MainWindow(QMainWindow if HAS_QT else object):
         # 1. Address Tab
         self.tab_address = AddressTab(self.project_state, self)
         self.tab_address.patch_changed.connect(self._on_patch_changed)
+        self.tab_address.open_library_requested.connect(self._on_open_fixture_list)
         self.stack.addWidget(self.tab_address)
 
         # One song list shared by Analyze, Result and Perform. Each tab reads the
@@ -439,7 +440,7 @@ class MainWindow(QMainWindow if HAS_QT else object):
         first, or the rig gets the pre-change look.
         """
         master_scale = self.tab_mixer.master_fader.value / 255.0
-        for ch in range(1, 257):
+        for ch in range(1, 513):
             raw_value = self.tab_mixer.faders[ch].value
             self.dmx_buffer[ch - 1] = int(round(raw_value * master_scale))
 
@@ -492,6 +493,7 @@ class MainWindow(QMainWindow if HAS_QT else object):
     # WORKFLOW INTEGRATION ACROSS TABS
     def _on_analysis_ready(self, res: dict) -> None:
         self.tab_result.load_analysis_result(res)
+        self.tab_perform.add_analyzed_song(res)
         self._switch_workspace(2)  # Switch to Result tab
 
     def _on_export_to_perform(self, song_res: dict) -> None:
@@ -569,7 +571,7 @@ class MainWindow(QMainWindow if HAS_QT else object):
     def _apply_dmx_buffer(self, buf: bytearray | list[int]) -> None:
         """Applies buffer to dmx_buffer, updates mixer faders, transmits Art-Net, and updates visualizer."""
         self.dmx_buffer[:] = bytes(buf)
-        for ch in range(1, 257):
+        for ch in range(1, 513):
             val = self.dmx_buffer[ch - 1]
             self.tab_mixer.set_channel_value(ch, val, silent=True)
 

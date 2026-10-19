@@ -15,6 +15,11 @@ from __future__ import annotations
 
 import sys
 import unittest
+from pathlib import Path
+
+_TOOLS_DIR = Path(__file__).resolve().parent
+if str(_TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(_TOOLS_DIR))
 
 import _autodialog_guard  # noqa: F401  (installs the dialog stubs)
 

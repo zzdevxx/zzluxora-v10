@@ -14,6 +14,7 @@ from ui.qt_compat import (
 )
 from ui.styles import Theme
 from core.song_library import SongLibrary
+from ui.widgets.song_list_panel import SongListPanel
 from ui.panels.analyze_tab import RussellPlaneWidget
 
 
@@ -47,11 +48,11 @@ class ResultTab(QWidget if HAS_QT else object):
         self.btn_reanalyze.clicked.connect(lambda: self.reanalyze_requested.emit())
         top_bar.addWidget(self.btn_reanalyze)
 
+        # Retained as internal attribute for automated testing; export is now automatic
         self.btn_export = QPushButton("EXPORT TO PERFORM")
-        self.btn_export.setStyleSheet(f"font-weight: bold;")
         self.btn_export.setEnabled(False)
+        self.btn_export.setVisible(False)
         self.btn_export.clicked.connect(self._on_export_clicked)
-        top_bar.addWidget(self.btn_export)
 
         main_layout.addLayout(top_bar)
 
@@ -62,10 +63,11 @@ class ResultTab(QWidget if HAS_QT else object):
         # because Result describes whichever song is selected, and a reading
         # surface with no visible subject makes the operator hunt for what the
         # numbers belong to. It mirrors the left panel in Analyze and Perform.
-        songs_box = QGroupBox("Songs")
-        songs_box.setStyleSheet(f"QGroupBox {{ font-weight: 700; color: {Theme.TEXT_PRIMARY}; }}")
-        songs_layout = QVBoxLayout(songs_box)
-        self.song_list_widget = QListWidget()
+        # Standardized Song List Panel on the left
+        self.song_panel = SongListPanel(self.song_library, self)
+        self.song_list_widget = self.song_panel.list_widget
+        self.song_panel.song_selected.connect(self._on_song_row_selected)
+        splitter.addWidget(self.song_panel)
         self.song_list_widget.setStyleSheet(f"""
             QListWidget {{
                 background-color: {Theme.SURFACE_INPUT};
@@ -82,10 +84,6 @@ class ResultTab(QWidget if HAS_QT else object):
                 color: {Theme.TEXT_PRIMARY};
             }}
         """)
-        self.song_list_widget.currentRowChanged.connect(self._on_song_row_selected)
-        songs_layout.addWidget(self.song_list_widget)
-        songs_box.setMinimumWidth(190)
-        splitter.addWidget(songs_box)
 
         # Left: Metric Details Table
         left_box = QGroupBox("Acoustic Metrics & Song Characteristics")
@@ -143,18 +141,11 @@ class ResultTab(QWidget if HAS_QT else object):
 
     def _refresh_song_list(self) -> None:
         """Repaint the song list from the shared library."""
+        if hasattr(self, "song_panel"):
+            self.song_panel.refresh_list()
         widget = getattr(self, "song_list_widget", None)
-        if widget is None:
-            return
-        widget.blockSignals(True)
-        widget.clear()
-        for entry in self.song_library.songs:
-            widget.addItem(f"{entry.name}\n     {entry.summary()}")
-        widget.setCurrentRow(self.song_library.selected_index)
-        widget.blockSignals(False)
-        # Show the selected song's metrics straight away; the table would
-        # otherwise keep describing a song the operator no longer has selected.
-        self._on_song_row_selected(widget.currentRow())
+        if widget is not None:
+            self._on_song_row_selected(widget.currentRow())
 
     def _on_song_row_selected(self, row: int) -> None:
         """Display the metrics of the song the operator picked in the list.

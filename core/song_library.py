@@ -282,6 +282,21 @@ class SongLibrary:
         self._broadcast_selection()
         return target
 
+    def reorder(self, from_index: int, to_index: int) -> None:
+        """Arbitrary position reorder for drag-and-drop playlist rearrangements."""
+        if not (0 <= from_index < len(self._songs) and 0 <= to_index < len(self._songs)):
+            return
+        selected_song = self._songs[self._selected] if 0 <= self._selected < len(self._songs) else None
+        item = self._songs.pop(from_index)
+        self._songs.insert(to_index, item)
+        if selected_song is not None:
+            self._selected = next(
+                (i for i, song in enumerate(self._songs) if song is selected_song),
+                self._selected,
+            )
+        self._broadcast_changed()
+        self._broadcast_selection()
+
     def select(self, index: int) -> None:
         if index == self._selected:
             return

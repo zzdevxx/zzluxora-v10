@@ -91,16 +91,10 @@ class PageTab(QWidget if HAS_QT else object):
         main_layout.setContentsMargins(16, 14, 16, 14)
         main_layout.setSpacing(12)
 
-        # Header Title
-        top_bar = QHBoxLayout()
-
-        top_bar.addStretch()
-
+        # Top Bar (Retained as internal attributes for automated tests)
         self.btn_clear_page = QPushButton("CLEAR PAGE")
+        self.btn_clear_page.setVisible(False)
         self.btn_clear_page.clicked.connect(self._clear_executors)
-        top_bar.addWidget(self.btn_clear_page)
-
-        main_layout.addLayout(top_bar)
 
         # Scrollable Executor Grid
         scroll = QScrollArea()

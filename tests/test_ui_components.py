@@ -140,7 +140,7 @@ class TestUIModules(unittest.TestCase):
         ]}])
         self.assertEqual(tab.faders[1].fixture_tag, "AL36-1:DIM")
         self.assertEqual(tab.faders[2].fixture_tag, "AL36-1:RED")
-        tab._on_scroll_changed(16 * 58)
+        tab._on_scroll_changed(64 * 58)
         self.assertEqual(tab.active_bank_index, 1)
         tab.close()
 
@@ -214,8 +214,8 @@ class TestUIModules(unittest.TestCase):
         self._application()
         from ui.panels.mixer_tab import MixerTab
         tab = MixerTab()
-        tab._on_scroll_changed(255 * 58)
-        self.assertEqual(tab.active_bank_index, 6)
+        tab._on_scroll_changed(511 * 58)
+        self.assertEqual(tab.active_bank_index, 7)
         tab._on_scroll_changed(0)
         self.assertEqual(tab.active_bank_index, 0)
         tab.close()
@@ -538,7 +538,7 @@ class TestUIModules(unittest.TestCase):
         self.assertIsNotNone(win)
         self.assertEqual(len(win.tab_buttons), 6)
         self.assertEqual(win.stack.count(), 6)
-        self.assertEqual(len(win.tab_mixer.faders), 257)
+        self.assertEqual(len(win.tab_mixer.faders), 513)
         win.tab_mixer.set_channel_value(0, 255)
         win.tab_mixer.apply_blackout()
         self.assertEqual(win.tab_mixer.master_fader.value, 0)
