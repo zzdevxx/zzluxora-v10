@@ -451,7 +451,7 @@ class MainWindow(QMainWindow if HAS_QT else object):
                 self.win_visualizer.update_dmx(self.dmx_buffer)
 
     def _on_fader_moved(self, ch_id: int, val: int) -> None:
-        master_val = self.tab_mixer.master_fader.value
+        master_val = val if ch_id == 0 else self.tab_mixer.master_fader.value
         master_dim = master_val / 255.0
 
         if ch_id == 0:
