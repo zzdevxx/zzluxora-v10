@@ -42,7 +42,7 @@ class YouTubeDownloadWorker(QThread if HAS_QT else object):
 
         try:
             wav_path = yt.download_and_convert(self.url, self.output_dir, progress=progress_cb)
-            self.download_finished.emit(wav_path)
+            self.download_finished.emit(str(wav_path))
         except yt.YouTubeImportError as err:
             self.download_failed.emit(str(err))
         except Exception as exc:
@@ -327,6 +327,7 @@ class SongListPanel(QWidget if HAS_QT else object):
         self.list_widget.setSelectionMode(sel_mode)
 
         self.list_widget.setUniformItemSizes(True)
+        self.list_widget.currentRowChanged.connect(self._on_current_row_changed)
         self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
         self.list_widget.setStyleSheet(f"""
             QListWidget {{
@@ -386,6 +387,9 @@ class SongListPanel(QWidget if HAS_QT else object):
         count = self.list_widget.count()
         self.btn_up.setEnabled(has_sel and row > 0)
         self.btn_down.setEnabled(has_sel and 0 <= row < count - 1)
+
+    def _on_current_row_changed(self, row: int) -> None:
+        self._on_selection_changed()
 
     def _on_selection_changed(self) -> None:
         self._update_button_states()

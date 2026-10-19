@@ -53,7 +53,7 @@ class TestProjectIO(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = os.path.join(tmpdir, "roundtrip.zlx")
-            save_faders = {channel: SimpleNamespace(value=0) for channel in range(257)}
+            save_faders = {channel: SimpleNamespace(value=0) for channel in range(513)}
             save_faders[0].value = 192
             save_faders[1].value = 200
             save_window = SimpleNamespace(
@@ -93,7 +93,7 @@ class TestProjectIO(unittest.TestCase):
             self.assertEqual(saved_project["cues"], [cue])
             self.assertEqual(saved_project["port"], 7777)
 
-            load_faders = {channel: SimpleNamespace(value=0) for channel in range(257)}
+            load_faders = {channel: SimpleNamespace(value=0) for channel in range(513)}
             load_window = SimpleNamespace(
                 current_project_path="",
                 target_port=6454,

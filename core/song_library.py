@@ -181,30 +181,35 @@ class SongLibrary:
 
         The Result tab exports this way: it has a result to schedule and the
         audio may not be on this machine at all. An entry already carrying the
-        same title is reused so re-exporting a song does not duplicate it.
+        same file path or title is reused so re-exporting a song does not duplicate it.
         """
+        target_path = analysis.get("file_path") if isinstance(analysis, dict) else None
+        target_idx = -1
+
+        if isinstance(target_path, str) and target_path.strip():
+            target_idx = self.index_of_path(target_path.strip())
+
         title = analysis.get("title") if isinstance(analysis, dict) else None
-        if isinstance(title, str) and title.strip():
+        if target_idx < 0 and isinstance(title, str) and title.strip():
             wanted = title.strip()
             for index, song in enumerate(self._songs):
-                if not self._matches_title(song, wanted):
-                    continue
-                # Attach the analysis to the entry that already exists, whether
-                # it arrived as a file or as an earlier export. Matching only
-                # file-less entries made a song that was loaded AND then exported
-                # appear twice, so the operator saw their own track duplicated.
-                self._songs[index].analysis = analysis
-                if select:
-                    self._selected = index
-                self._broadcast_changed()
-                # Announce the selection every time, because at least one viewer
-                # (the Result tab) refreshes its detail pane on this callback.
-                # select() short-circuits when the index is unchanged, so reusing
-                # the already-selected entry used to update the entry and look
-                # like nothing happened.
-                self._broadcast_selection()
-                return index
-        self._songs.append(SongEntry(path="", analysis=analysis))
+                if self._matches_title(song, wanted):
+                    target_idx = index
+                    break
+
+        if target_idx >= 0:
+            old_cues = self._songs[target_idx].analysis.get("custom_cues") if isinstance(self._songs[target_idx].analysis, dict) else None
+            new_analysis = dict(analysis)
+            if old_cues and "custom_cues" not in new_analysis:
+                new_analysis["custom_cues"] = [dict(c) for c in old_cues if isinstance(c, dict)]
+            self._songs[target_idx].analysis = new_analysis
+            if select:
+                self._selected = target_idx
+            self._broadcast_changed()
+            self._broadcast_selection()
+            return target_idx
+
+        self._songs.append(SongEntry(path=str(target_path) if target_path else "", analysis=analysis))
         index = len(self._songs) - 1
         if select:
             self._selected = index
@@ -215,7 +220,11 @@ class SongLibrary:
     def set_analysis(self, index: int, analysis: dict[str, Any]) -> None:
         if not 0 <= index < len(self._songs):
             return
-        self._songs[index].analysis = analysis
+        old_cues = self._songs[index].analysis.get("custom_cues") if isinstance(self._songs[index].analysis, dict) else None
+        new_analysis = dict(analysis)
+        if old_cues and "custom_cues" not in new_analysis:
+            new_analysis["custom_cues"] = [dict(c) for c in old_cues if isinstance(c, dict)]
+        self._songs[index].analysis = new_analysis
         self._broadcast_changed()
 
     def set_analysis_by_path(self, path: str, analysis: dict[str, Any]) -> None:

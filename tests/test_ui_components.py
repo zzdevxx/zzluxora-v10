@@ -17,6 +17,142 @@ if str(BASE_DIR) not in sys.path:
 class TestUIModules(unittest.TestCase):
     """Verifies UI imports, demo showfile patching, and QLC+ workspace agreement."""
 
+    def test_address_grid_has_20_columns_and_no_horizontal_scrollbar(self):
+        self._application()
+        from ui.qt_compat import Qt
+        from ui.panels.address_tab import AddressTab
+
+        tab = AddressTab()
+        self.assertEqual(len(tab.grid_area.boxes), 512)
+        self.assertEqual(tab.grid_area.grid_layout.columnCount(), 20)
+        self.assertEqual(tab.scroll_area.horizontalScrollBarPolicy(), Qt.ScrollBarAlwaysOff)
+        tab.close()
+
+    def test_patched_grid_box_resolves_owning_address_tab(self):
+        self._application()
+        from ui.panels.address_tab import AddressTab
+
+        tab = AddressTab()
+        box = tab.grid_area.boxes[1]
+
+        self.assertIs(box._find_address_tab(), tab)
+        tab.close()
+
+    def test_song_library_reorder_moves_song_to_requested_row(self):
+        from core.song_library import SongLibrary
+
+        library = SongLibrary()
+        for name in ("a.wav", "b.wav", "c.wav"):
+            library.add_path(name)
+        library.select(0)
+
+        library.reorder(0, 2)
+
+        self.assertEqual([song.title for song in library.songs], ["b", "c", "a"])
+        self.assertEqual(library.selected_index, 2)
+
+    def test_song_library_move_up_does_not_reverse_selection(self):
+        from core.song_library import SongLibrary
+
+        library = SongLibrary()
+        for name in ("a.wav", "b.wav", "c.wav"):
+            library.add_path(name)
+        library.select(2)
+
+        library.move(1, -1)
+
+        self.assertEqual([song.title for song in library.songs], ["b", "a", "c"])
+        self.assertEqual(library.selected_index, 2)
+
+    def test_song_analysis_refresh_preserves_custom_perform_cues(self):
+        from core.song_library import SongLibrary
+
+        library = SongLibrary()
+        analysis = {"title": "Worship", "bpm": 80, "quadrant": "Q4_PEACE_INTIMACY"}
+        index = library.add_analysis(analysis)
+        custom_cues = [{"section": "Altar Call", "fade_in": 3.5, "fade_out": 4.0}]
+        library.songs[index].analysis["custom_cues"] = custom_cues
+
+        library.add_analysis({"title": "Worship", "bpm": 81, "quadrant": "Q4_PEACE_INTIMACY"})
+
+        self.assertEqual(library.songs[index].analysis["custom_cues"], custom_cues)
+
+    def test_perform_does_not_show_cues_for_an_unanalysed_shared_song(self):
+        self._application()
+        from core.song_library import SongLibrary
+        from ui.panels.perform_tab import PerformTab
+
+        library = SongLibrary()
+        library.add_analysis({"title": "Analysed A", "quadrant": "Q1_PRAISE_HIGH", "palette": {"R": 255, "G": 120, "B": 20, "W": 30}})
+        library.add_path("queued-b.wav")
+        library.add_analysis({"title": "Analysed C", "quadrant": "Q4_PEACE_INTIMACY", "palette": {"R": 30, "G": 20, "B": 180, "W": 20}})
+
+        tab = PerformTab(song_library=library)
+        tab._refresh_playlist_view()
+
+        # Analyze/Result/Perform share the full three-row library. Selecting B
+        # must not index the two-entry analyzed-only playlist and show C's cues.
+        tab.song_panel.list_widget.setCurrentRow(1)
+
+        self.assertEqual(tab.cue_table.rowCount(), 0)
+        self.assertEqual(tab.current_song_cues, [])
+        tab.close()
+
+    def test_custom_cues_survive_song_library_refresh(self):
+        self._application()
+        from unittest.mock import patch
+        from ui.qt_compat import QDialog
+        from core.song_library import SongLibrary
+        from ui.panels.perform_tab import EditCueDialog, PerformTab
+
+        library = SongLibrary()
+        library.add_analysis({
+            "title": "Analyzed A", "quadrant": "Q1_PRAISE_HIGH",
+            "palette": {"R": 255, "G": 120, "B": 20, "W": 30},
+        })
+        tab = PerformTab(song_library=library)
+        tab._refresh_playlist_view()
+        custom_cue = {
+            "section": "Altar Call", "mood": "Holy Surrender",
+            "fade_in": 3.5, "fade_out": 3.0, "dimmer": 240,
+            "color": {"R": 255, "G": 200, "B": 150, "W": 100},
+        }
+        with patch("ui.panels.perform_tab.EditCueDialog") as dialog_class:
+            dialog = dialog_class.return_value
+            dialog.cue = custom_cue
+            dialog.exec.return_value = 1  # QDialog.DialogCode.Accepted
+            tab._on_add_cue_clicked()
+
+        self.assertEqual(tab.current_song_cues[-1]["section"], "Altar Call")
+        library.add_path("queued-b.wav")
+        self.assertEqual(tab.playlist[0].get("custom_cues", [])[-1]["section"], "Altar Call")
+        tab.close()
+
+    def test_grand_master_scales_dmx_channel_512(self):
+        self._application()
+        from ui.main_window import MainWindow
+
+        win = MainWindow()
+        win.tab_mixer.set_channel_value(512, 200, silent=True)
+        win.tab_mixer.master_fader.set_value_silent(128)
+
+        win._on_fader_moved(0, 128)
+
+        self.assertEqual(win.dmx_buffer[511], 100)
+        win.close()
+
+    def test_mixer_patch_sync_clears_channel_512_tag(self):
+        self._application()
+        from ui.panels.mixer_tab import MixerTab
+
+        tab = MixerTab()
+        tab.faders[512].set_fixture_tag("STALE:RED")
+
+        tab.sync_patch([])
+
+        self.assertEqual(tab.faders[512].fixture_tag, "")
+        tab.close()
+
     def setUp(self):
         # Every test that builds a MainWindow leaves one alive unless the Qt
         # object is actually destroyed. 35 tests x 4 top-level widgets is enough

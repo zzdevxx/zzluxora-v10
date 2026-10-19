@@ -121,6 +121,7 @@ class PerformTab(QWidget if HAS_QT else object):
         self.song_library.on_changed(self._refresh_playlist_view)
         self.song_library.on_selection_changed(self._on_library_selection)
         self.playlist: list[dict] = []
+        self._perform_library_indices: list[int] = []
         self.current_song_cues: list[dict] = []
         self.active_cue_index: int = -1
         self._init_ui()
@@ -136,12 +137,16 @@ class PerformTab(QWidget if HAS_QT else object):
 
         # Retained as internal attributes for automated tests
         self.btn_move_up = QPushButton("MOVE UP")
+        self.btn_move_up.setVisible(False)
         self.btn_move_up.clicked.connect(self._on_move_up)
         self.btn_move_down = QPushButton("MOVE DOWN")
+        self.btn_move_down.setVisible(False)
         self.btn_move_down.clicked.connect(self._on_move_down)
         self.btn_delete_song = QPushButton("DELETE")
+        self.btn_delete_song.setVisible(False)
         self.btn_delete_song.clicked.connect(self._on_delete_song)
         self.btn_export_page = QPushButton("GENERATE EXECUTORS")
+        self.btn_export_page.setVisible(False)
         self.btn_export_page.clicked.connect(self._on_export_to_page)
 
         main_layout.addLayout(top_bar)
@@ -152,13 +157,21 @@ class PerformTab(QWidget if HAS_QT else object):
         # Left: Standardized Song List Panel
         self.song_panel = SongListPanel(self.song_library, self)
         self.playlist_widget = self.song_panel.list_widget
-        self.song_panel.song_selected.connect(self._on_song_selected)
+        self.song_panel.song_selected.connect(self._on_library_selection)
         splitter.addWidget(self.song_panel)
 
         # Right: Section Cues & Master Playback
-        right_box = QGroupBox("Section Cues & Stage Lighting Timing")
-        right_box.setStyleSheet(f"QGroupBox {{ font-weight: 700; color: {Theme.TEXT_PRIMARY}; }}")
+        right_box = QFrame()
+        right_box.setStyleSheet(f"""
+            QFrame {{
+                background-color: {Theme.BG_ROOT};
+                border: 1px solid {Theme.BORDER_SUBTLE};
+                border-radius: 6px;
+            }}
+        """)
         right_layout = QVBoxLayout(right_box)
+        right_layout.setContentsMargins(12, 10, 12, 10)
+        right_layout.setSpacing(10)
 
         # Cue Control Bar (5 square icon buttons)
         cue_bar = QHBoxLayout()
@@ -340,21 +353,29 @@ class PerformTab(QWidget if HAS_QT else object):
 
         Rebuilt wholesale rather than appended to, because the library can add,
         remove and reorder in one action. Only songs that carry analysis are
-        listed here: Perform builds cues from analysis, so an unanalysed file has
-        nothing to schedule yet.
+        scheduled for playback cues.
         """
         if hasattr(self, "song_panel"):
             self.song_panel.refresh_list()
-        entries = [entry for entry in self.song_library.songs if entry.is_analyzed]
-        self.playlist = [dict(entry.analysis or {}, file_path=entry.path) for entry in entries]
 
-        widget = getattr(self, "playlist_widget", None)
-        if widget is not None:
-            self._on_song_selected(widget.currentRow())
+        entries = [
+            (idx, entry)
+            for idx, entry in enumerate(self.song_library.songs)
+            if entry.is_analyzed
+        ]
+        self._perform_library_indices = [idx for idx, _ in entries]
+        self.playlist = []
+        for idx, entry in entries:
+            song = dict(entry.analysis or {}, file_path=entry.path)
+            self._restore_custom_cues(song, idx)
+            self.playlist.append(song)
+
+        sel_idx = self.song_library.selected_index
+        self._on_song_selected(sel_idx)
         self.auto_sync_to_page()
 
     def _on_library_selection(self, index: int) -> None:
-        """Follow a selection made in another tab."""
+        """Follow a selection made in another tab or in our own song_panel."""
         if hasattr(self, "song_panel"):
             self.song_panel._on_library_selection_changed(index)
         self._on_song_selected(index)
@@ -368,7 +389,7 @@ class PerformTab(QWidget if HAS_QT else object):
         self.song_library.add_analysis(song_data)
 
     def _on_song_selected(self, row: int) -> None:
-        if not (0 <= row < len(self.playlist)):
+        if not (0 <= row < len(self.song_library.songs)):
             self.cue_table.setRowCount(0)
             self.current_song_cues = []
             self.active_cue_index = -1
@@ -376,7 +397,19 @@ class PerformTab(QWidget if HAS_QT else object):
             self._on_cue_selection_changed()
             return
 
-        song = self.playlist[row]
+        entry = self.song_library.songs[row]
+        if not entry.is_analyzed or not isinstance(entry.analysis, dict):
+            self.cue_table.setRowCount(0)
+            self.current_song_cues = []
+            self.active_cue_index = -1
+            self.lbl_cue_status.setText("STATUS: STANDBY | SONG NOT ANALYZED")
+            self._on_cue_selection_changed()
+            return
+
+        song = next((p for p in self.playlist if p.get("file_path") == entry.path or p.get("title") == entry.title), None)
+        if song is None:
+            song = dict(entry.analysis, file_path=entry.path)
+            self._restore_custom_cues(song, row)
         self._populate_song_cues(song)
         self._on_cue_selection_changed()
 
@@ -590,6 +623,9 @@ class PerformTab(QWidget if HAS_QT else object):
 
     def _populate_song_cues(self, song: dict) -> None:
         """Render the derived or custom section cues into the cue table."""
+        row = self.playlist_widget.currentRow()
+        if 0 <= row < len(self._perform_library_indices):
+            self._restore_custom_cues(song, self._perform_library_indices[row])
         cues = song.get("custom_cues") or self._derive_section_cues(song)
         self.current_song_cues = list(cues)
         self.active_cue_index = -1
@@ -644,6 +680,24 @@ class PerformTab(QWidget if HAS_QT else object):
             btn_go.clicked.connect(lambda _, r=row: self._trigger_cue_at_row(r))
             self.cue_table.setCellWidget(row, 5, btn_go)
 
+    def _restore_custom_cues(self, song: dict, library_index: int) -> None:
+        entry = self.song_library.songs[library_index]
+        stored = entry.analysis.get("custom_cues") if isinstance(entry.analysis, dict) else None
+        if isinstance(stored, list):
+            song["custom_cues"] = [dict(cue) for cue in stored if isinstance(cue, dict)]
+
+    def _store_current_custom_cues(self) -> None:
+        """Persist the current cue list against its SongLibrary entry."""
+        row = self.playlist_widget.currentRow()
+        if not (0 <= row < len(self._perform_library_indices)):
+            return
+        library_index = self._perform_library_indices[row]
+        entry = self.song_library.songs[library_index]
+        if entry.analysis is None:
+            return
+        entry.analysis["custom_cues"] = [dict(cue) for cue in self.current_song_cues]
+        self.playlist[row]["custom_cues"] = [dict(cue) for cue in self.current_song_cues]
+
     def _on_cue_selection_changed(self) -> None:
         r = self.cue_table.currentRow()
         has_sel = 0 <= r < len(self.current_song_cues)
@@ -664,11 +718,9 @@ class PerformTab(QWidget if HAS_QT else object):
             "color": {"R": 255, "G": 200, "B": 100, "W": 50},
         }
         dlg = EditCueDialog(default_cue, is_new=True, parent=self)
-        if dlg.exec() == QDialog.Accepted:
+        if dlg.exec() == getattr(QDialog, "Accepted", getattr(getattr(QDialog, "DialogCode", None), "Accepted", 1)):
             self.current_song_cues.append(dlg.cue)
-            curr_row = self.playlist_widget.currentRow()
-            if 0 <= curr_row < len(self.playlist):
-                self.playlist[curr_row]["custom_cues"] = list(self.current_song_cues)
+            self._store_current_custom_cues()
             self._render_cues_to_table(self.current_song_cues)
             self.auto_sync_to_page()
 
@@ -677,11 +729,9 @@ class PerformTab(QWidget if HAS_QT else object):
         if not (0 <= r < len(self.current_song_cues)):
             return
         dlg = EditCueDialog(self.current_song_cues[r], is_new=False, parent=self)
-        if dlg.exec() == QDialog.Accepted:
+        if dlg.exec() == getattr(QDialog, "Accepted", getattr(getattr(QDialog, "DialogCode", None), "Accepted", 1)):
             self.current_song_cues[r] = dlg.cue
-            curr_row = self.playlist_widget.currentRow()
-            if 0 <= curr_row < len(self.playlist):
-                self.playlist[curr_row]["custom_cues"] = list(self.current_song_cues)
+            self._store_current_custom_cues()
             self._render_cues_to_table(self.current_song_cues)
             self.auto_sync_to_page()
 
@@ -696,9 +746,7 @@ class PerformTab(QWidget if HAS_QT else object):
         )
         if reply == QMessageBox.Yes:
             del self.current_song_cues[r]
-            curr_row = self.playlist_widget.currentRow()
-            if 0 <= curr_row < len(self.playlist):
-                self.playlist[curr_row]["custom_cues"] = list(self.current_song_cues)
+            self._store_current_custom_cues()
             self._render_cues_to_table(self.current_song_cues)
             self.auto_sync_to_page()
 
@@ -814,10 +862,14 @@ class PerformTab(QWidget if HAS_QT else object):
 
         next_row = self.active_cue_index + 1
         if next_row >= len(self.current_song_cues):
-            # Advance to next song if available
             curr_song_row = self.playlist_widget.currentRow()
-            if curr_song_row + 1 < len(self.playlist):
-                self.playlist_widget.setCurrentRow(curr_song_row + 1)
+            next_analyzed_row = -1
+            for r in range(curr_song_row + 1, len(self.song_library.songs)):
+                if self.song_library.songs[r].is_analyzed:
+                    next_analyzed_row = r
+                    break
+            if next_analyzed_row >= 0:
+                self.playlist_widget.setCurrentRow(next_analyzed_row)
                 next_row = 0
             else:
                 next_row = 0  # Loop back to start

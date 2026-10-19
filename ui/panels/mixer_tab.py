@@ -1,6 +1,6 @@
 """
-mixer_tab.py | grandMA3 257-Channel Industrial Console Mixer Desk
-Features 1 Master Dimmer + 256 DMX channels utilizing tactile fader widgets
+mixer_tab.py | grandMA3 513-Fader Industrial Console Mixer Desk
+Features 1 Grand Master + 512 DMX channels utilizing tactile fader widgets
 with illuminated groove rails, analog calibration scale marks, and smooth horizontal scrolling.
 """
 
@@ -16,7 +16,7 @@ from ui.widgets.tactile_fader import TactileFader
 
 class MixerTab(QWidget if HAS_QT else object):
     """
-    Mixer Tab: 257 physical-style console faders (1 Grand Master + 256 DMX Output Channels).
+    Mixer Tab: 513 physical-style console faders (1 Grand Master + 512 DMX Output Channels).
     Emulates the hardware touch and lighting of grandMA3 lighting consoles.
     """
     fader_changed = Signal(int, int)  # (channel_id, value)
@@ -224,7 +224,7 @@ class MixerTab(QWidget if HAS_QT else object):
     def sync_patch(self, patched_fixtures: list[dict]) -> None:
         """Updates fader header tags to show patched fixture and channel roles."""
         # 1. Reset all channels to blank tag
-        for ch in range(1, 257):
+        for ch in range(1, 513):
             if ch in self.faders:
                 self.faders[ch].set_fixture_tag("")
 

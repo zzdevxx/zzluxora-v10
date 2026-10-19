@@ -17,6 +17,60 @@ from ui.qt_compat import (
 from ui.styles import Theme
 
 
+class DraggableFixtureListWidget(QListWidget if HAS_QT else object):
+    """Fixture panel list with reorder and fixture-profile drag payloads."""
+    order_dropped = Signal(int, int)
+
+    def __init__(self, parent=None):
+        if not HAS_QT:
+            return
+        super().__init__(parent)
+        self.setDragEnabled(True)
+        self.setAcceptDrops(True)
+        self.setDefaultDropAction(Qt.MoveAction)
+        self._dragged_fixture: dict | None = None
+
+    def startDrag(self, supportedActions):
+        items = self.selectedItems()
+        if not items:
+            return
+        self._dragged_fixture = items[0].data(Qt.UserRole)
+        if not isinstance(self._dragged_fixture, dict):
+            self._dragged_fixture = None
+            return
+        drag = QDrag(self)
+        mime = QMimeData()
+        payload = json.dumps(self._dragged_fixture)
+        mime.setData("application/x-zzluxora-fixture", payload.encode("utf-8"))
+        mime.setText(payload)
+        drag.setMimeData(mime)
+        drag.exec(Qt.CopyAction)
+        self._dragged_fixture = None
+
+    def dropEvent(self, event):
+        # External profile drops belong to AddressGridArea. This list only handles
+        # internal row movement and reports the original and final row explicitly.
+        if event.mimeData().hasFormat("application/x-zzluxora-fixture"):
+            event.ignore()
+            return
+        source_row = self.currentRow()
+        pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
+        target = self.indexAt(pos)
+        target_row = target.row() if target.isValid() else self.count() - 1
+        super().dropEvent(event)
+        if source_row >= 0 and target_row >= 0 and source_row != target_row:
+            self.order_dropped.emit(source_row, target_row)
+
+    def mimeData(self, items):
+        if self._dragged_fixture is None:
+            return super().mimeData(items)
+        mime = QMimeData()
+        payload = json.dumps(self._dragged_fixture)
+        mime.setData("application/x-zzluxora-fixture", payload.encode("utf-8"))
+        mime.setText(payload)
+        return mime
+
+
 class DMXChannelBox(QFrame if HAS_QT else object):
     """Visual widget representing one DMX channel (1-512) in the 20-column grid."""
     def __init__(self, channel_num: int, parent: QWidget | None = None):
@@ -53,13 +107,26 @@ class DMXChannelBox(QFrame if HAS_QT else object):
 
         self.update_style()
 
+    def _find_address_tab(self):
+        """Walk the widget ancestry to find the owning AddressTab safely."""
+        parent = self.parentWidget()
+        while parent is not None:
+            if callable(getattr(parent, "get_patched_fixtures", None)) and hasattr(parent, "grid_area"):
+                return parent
+            parent = parent.parentWidget()
+        return None
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton and self.is_patched and self.fixture_name:
             self._drag_start_pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
         super().mousePressEvent(event)
 
+    def mouseReleaseEvent(self, event):
+        self._drag_start_pos = None
+        super().mouseReleaseEvent(event)
+
     def mouseMoveEvent(self, event):
-        if not (event.buttons() & Qt.LeftButton) or not self.is_patched or not self._drag_start_pos:
+        if not (event.buttons() & Qt.LeftButton) or not self.is_patched or self._drag_start_pos is None:
             super().mouseMoveEvent(event)
             return
         curr_pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
@@ -67,10 +134,10 @@ class DMXChannelBox(QFrame if HAS_QT else object):
             super().mouseMoveEvent(event)
             return
 
-        # Find fixture in grid to move
-        grid_area = self.parent()
-        addr_tab = grid_area.parent().parent() if grid_area and hasattr(grid_area, "parent") else None
-        fixtures = addr_tab.get_patched_fixtures() if addr_tab and hasattr(addr_tab, "get_patched_fixtures") else []
+        # Resolve the source fixture through the owning AddressTab, even when
+        # Qt inserts an intermediate QWidget in the grid's parent chain.
+        addr_tab = self._find_address_tab()
+        fixtures = addr_tab.get_patched_fixtures() if addr_tab is not None else []
         match = None
         for f in fixtures:
             if any(c["channel"] == self.channel_num for c in f.get("channels", [])):
@@ -396,8 +463,8 @@ class FixtureListPanel(QWidget if HAS_QT else object):
 
         layout.addLayout(bar)
 
-        self.list_widget = QListWidget()
-        self.list_widget.setDragEnabled(True)
+        self.list_widget = DraggableFixtureListWidget()
+        self.list_widget.order_dropped.connect(self._on_order_dropped)
         # Qt6 nests this enum inside DragDropMode; Qt5 exposes it flat.
         drag_only = getattr(QListWidget, "DragOnly", None)
         if drag_only is None:
@@ -477,6 +544,11 @@ class FixtureListPanel(QWidget if HAS_QT else object):
             if row_data.get("start_channel") in starts:
                 channels.extend(c["channel"] for c in row_data.get("channels", []))
         self.fixture_selected.emit(channels)
+
+    def _on_order_dropped(self, from_row: int, to_row: int) -> None:
+        tab = self.parent()
+        if hasattr(tab, "reorder_fixture"):
+            tab.reorder_fixture(from_row, to_row)
 
     def _on_move_clicked(self, delta: int) -> None:
         row = self.list_widget.currentRow()
@@ -611,17 +683,25 @@ class AddressTab(QWidget if HAS_QT else object):
         self.fixture_panel.refresh_from_grid()
 
     def _snapshot_state(self) -> dict:
-        """Captures current patch state for Undo/Redo."""
-        snap = {}
-        for ch, box in self.grid_area.boxes.items():
-            if box.is_patched:
-                snap[ch] = (box.channel_type, box.channel_label, box.fixture_name)
-        return snap
+        """Captures patch cells and fixture sequence order for Undo/Redo."""
+        snap = {
+            ch: (box.channel_type, box.channel_label, box.fixture_name)
+            for ch, box in self.grid_area.boxes.items()
+            if box.is_patched
+        }
+        return {"cells": snap, "fixture_order": list(self.fixture_order)}
 
     def _restore_snapshot(self, snap: dict) -> None:
+        # Accept the legacy cells-only snapshots created before order tracking.
+        if "cells" in snap and isinstance(snap["cells"], dict):
+            cells = snap["cells"]
+            self.fixture_order = list(snap.get("fixture_order", []))
+        else:
+            cells = snap
+            self.fixture_order = []
         for ch, box in self.grid_area.boxes.items():
-            if ch in snap:
-                ch_type, label, fixture_name = snap[ch]
+            if ch in cells:
+                ch_type, label, fixture_name = cells[ch]
                 box.set_patched(ch_type, label, fixture_name)
             else:
                 box.set_unpatched()
@@ -806,6 +886,7 @@ class AddressTab(QWidget if HAS_QT else object):
         # Channels shared by both spans are skipped, or the release would wipe
         # cells the new patch is about to write.
         if moving_from:
+            old_start = min(moving_from)
             new_span = set(range(start_channel, last_channel + 1))
             for ch in moving_from:
                 if ch in new_span:
@@ -813,6 +894,9 @@ class AddressTab(QWidget if HAS_QT else object):
                 source = self.grid_area.boxes.get(ch)
                 if source is not None:
                     source.set_unpatched()
+            if old_start in self.fixture_order:
+                order_index = self.fixture_order.index(old_start)
+                self.fixture_order[order_index] = start_channel
 
         for idx, ch_info in enumerate(channels):
             target_ch = start_channel + idx
@@ -891,7 +975,6 @@ class AddressTab(QWidget if HAS_QT else object):
         item = current_starts.pop(from_idx)
         current_starts.insert(to_idx, item)
         self.fixture_order = current_starts
-
         self.update_fixture_brackets()
         self.fixture_panel.refresh_from_grid()
         self.fixture_panel.list_widget.setCurrentRow(to_idx)
@@ -908,6 +991,7 @@ class AddressTab(QWidget if HAS_QT else object):
         if reply == QMessageBox.Yes:
             self.grid_area.clear_drag_hover()
             self.record_undo()
+            self.fixture_order = []
             for box in self.grid_area.boxes.values():
                 box.set_unpatched()
             self.update_fixture_brackets()
@@ -938,6 +1022,7 @@ class AddressTab(QWidget if HAS_QT else object):
     def _on_patch_alien_gia(self) -> None:
         """Auto-patch four Alien-AL36 fixtures at DMX001, DMX017, DMX033, DMX049."""
         self.record_undo()
+        self.fixture_order = []
         for box in self.grid_area.boxes.values():
             box.set_unpatched()
 
@@ -965,6 +1050,7 @@ class AddressTab(QWidget if HAS_QT else object):
     def _on_patch_kuma_bench(self) -> None:
         """Auto-patch one Kumastb-STL47 fixture at DMX001."""
         self.record_undo()
+        self.fixture_order = []
         for box in self.grid_area.boxes.values():
             box.set_unpatched()
 

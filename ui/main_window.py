@@ -455,8 +455,8 @@ class MainWindow(QMainWindow if HAS_QT else object):
         master_dim = master_val / 255.0
 
         if ch_id == 0:
-            # Grand Master moved: scale all 256 channels
-            for ch in range(1, 257):
+            # Grand Master moved: scale all 512 channels
+            for ch in range(1, 513):
                 raw = self.tab_mixer.faders[ch].value
                 self.dmx_buffer[ch - 1] = int(round(raw * master_dim))
         elif 1 <= ch_id <= 512:
@@ -718,9 +718,10 @@ class MainWindow(QMainWindow if HAS_QT else object):
                 faders_dict["0"] = data["master_dimmer"]
             for channel_text, value in faders_dict.items():
                 self.tab_mixer.set_channel_value(int(channel_text), value, silent=True)
-            master_scale = self.tab_mixer.master_fader.value / 255.0
-            for channel in range(1, 257):
-                raw_value = self.tab_mixer.faders[channel].value
+            master_scale = getattr(self.tab_mixer.master_fader, "value", 255) / 255.0
+            for channel in range(1, 513):
+                fader = self.tab_mixer.faders.get(channel) if hasattr(self.tab_mixer.faders, "get") else None
+                raw_value = getattr(fader, "value", 0) if fader is not None else 0
                 self.dmx_buffer[channel - 1] = round(raw_value * master_scale)
 
             if notify:
@@ -778,10 +779,12 @@ class MainWindow(QMainWindow if HAS_QT else object):
                 patches.append(entry)
 
             faders = {}
-            for ch in range(257):
-                val = self.tab_mixer.faders[ch].value
-                if val > 0 or ch == 0:
-                    faders[str(ch)] = val
+            for ch in range(513):
+                fader = self.tab_mixer.faders.get(ch) if hasattr(self.tab_mixer.faders, "get") else None
+                if fader is not None:
+                    val = getattr(fader, "value", 0)
+                    if val > 0 or ch == 0:
+                        faders[str(ch)] = val
 
             data = {
                 "app": "ZZLUXORA",

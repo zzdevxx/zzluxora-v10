@@ -29,8 +29,8 @@ Dokumen ini untuk agent yang melanjutkan pekerjaan ZZLUXORA. Baca ini dulu sebel
 | Software `zzdree/zzluxora-v10` | HEAD **`0ae22ea`**, working tree **bersih**, sinkron `origin/main` |
 | Naskah `zzdree/zzluxora-thesis` | HEAD **`b2fbbc7`**, bersih, sinkron (Bab 4 & 5 naskah v5 terisi data empiris) |
 | Hardware `zzdree/esp32-artnet-dmx` | HEAD **`cddd36f`**, bersih, sinkron (firmware v4.0.1 pacing absolut & packet counter) |
-| Test suite | **177 test unik lulus** (146 unittest + 31 pytest), exit 0 · jumlah wajib diperiksa, lihat §2c |
-| Anti-slop | **184 berkas, 0 error, 0 warning** |
+| Test suite | **194 test unik lulus** (163 unittest + 31 pytest), exit 0 · jumlah wajib diperiksa, lihat §2c |
+| Anti-slop | **189 berkas, 0 error, 0 warning** |
 | Uji Black-Box | **100,0% Pass Rate** (23 kasus software lulus dari 23 kasus; FB-24 N/A [VERIFIKASI LAPANGAN]) |
 | Integrasi Ekosistem | **Tritunggal Sistem saling terhubung (cross-linked)** di seluruh README dan memori |
 
@@ -44,7 +44,7 @@ PYTHONPATH=$PWD/tools python3 tools/run_tests_guarded.py
 
 # PERIKSA JUMLAH test yang benar-benar dikumpulkan (bukan hanya status OK)
 QT_QPA_PLATFORM=offscreen PYTHONPATH=$PWD/tools python3 -m pytest tests/ --collect-only -q | tail -1
-# 177 tests collected. JANGAN menghitung dengan unittest discover: ia ikut
+# 194 tests collected. JANGAN menghitung dengan unittest discover: ia ikut
 # mengumpulkan berkas gaya-pytest dan melaporkan 149, angka yang menyesatkan.
 # Kalau turun mendadak, ada berkas test gagal diimpor.
 
