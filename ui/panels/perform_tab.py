@@ -689,14 +689,15 @@ class PerformTab(QWidget if HAS_QT else object):
     def _store_current_custom_cues(self) -> None:
         """Persist the current cue list against its SongLibrary entry."""
         row = self.playlist_widget.currentRow()
-        if not (0 <= row < len(self._perform_library_indices)):
+        if not (0 <= row < len(self.song_library.songs)):
             return
-        library_index = self._perform_library_indices[row]
-        entry = self.song_library.songs[library_index]
-        if entry.analysis is None:
+        entry = self.song_library.songs[row]
+        if entry.analysis is None or not isinstance(entry.analysis, dict):
             return
         entry.analysis["custom_cues"] = [dict(cue) for cue in self.current_song_cues]
-        self.playlist[row]["custom_cues"] = [dict(cue) for cue in self.current_song_cues]
+        for p in self.playlist:
+            if (p.get("file_path") and p.get("file_path") == entry.path) or p.get("title") == entry.title:
+                p["custom_cues"] = [dict(cue) for cue in self.current_song_cues]
 
     def _on_cue_selection_changed(self) -> None:
         r = self.cue_table.currentRow()
