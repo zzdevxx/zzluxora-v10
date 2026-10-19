@@ -124,6 +124,8 @@ class PerformTab(QWidget if HAS_QT else object):
         self._perform_library_indices: list[int] = []
         self.current_song_cues: list[dict] = []
         self.active_cue_index: int = -1
+        self.undo_stack: list[dict] = []
+        self.redo_stack: list[dict] = []
         self._init_ui()
 
     def _init_ui(self) -> None:
@@ -686,6 +688,54 @@ class PerformTab(QWidget if HAS_QT else object):
         if isinstance(stored, list):
             song["custom_cues"] = [dict(cue) for cue in stored if isinstance(cue, dict)]
 
+    def _snapshot_cues(self) -> dict:
+        curr_row = self.playlist_widget.currentRow()
+        lib_idx = self._perform_library_indices[curr_row] if 0 <= curr_row < len(self._perform_library_indices) else -1
+        return {
+            "library_index": lib_idx,
+            "cues": [dict(c) for c in self.current_song_cues],
+        }
+
+    def _restore_cue_snapshot(self, snap: dict) -> None:
+        lib_idx = snap.get("library_index", -1)
+        cues = [dict(c) for c in snap.get("cues", [])]
+        if 0 <= lib_idx < len(self.song_library.songs):
+            entry = self.song_library.songs[lib_idx]
+            if entry.analysis:
+                entry.analysis["custom_cues"] = [dict(c) for c in cues]
+            curr_row = self.playlist_widget.currentRow()
+            if 0 <= curr_row < len(self._perform_library_indices) and self._perform_library_indices[curr_row] == lib_idx:
+                self.current_song_cues = list(cues)
+                self._render_cues_to_table(self.current_song_cues)
+                self.auto_sync_to_page()
+                self._on_cue_selection_changed()
+
+    def record_undo(self) -> None:
+        self.undo_stack.append(self._snapshot_cues())
+        self.redo_stack.clear()
+
+    def can_undo(self) -> bool:
+        return bool(self.undo_stack)
+
+    def can_redo(self) -> bool:
+        return bool(self.redo_stack)
+
+    def undo_cue(self) -> bool:
+        if not self.can_undo():
+            return False
+        self.redo_stack.append(self._snapshot_cues())
+        snap = self.undo_stack.pop()
+        self._restore_cue_snapshot(snap)
+        return True
+
+    def redo_cue(self) -> bool:
+        if not self.can_redo():
+            return False
+        self.undo_stack.append(self._snapshot_cues())
+        snap = self.redo_stack.pop()
+        self._restore_cue_snapshot(snap)
+        return True
+
     def _store_current_custom_cues(self) -> None:
         """Persist the current cue list against its SongLibrary entry."""
         row = self.playlist_widget.currentRow()
@@ -720,6 +770,7 @@ class PerformTab(QWidget if HAS_QT else object):
         }
         dlg = EditCueDialog(default_cue, is_new=True, parent=self)
         if dlg.exec() == getattr(QDialog, "Accepted", getattr(getattr(QDialog, "DialogCode", None), "Accepted", 1)):
+            self.record_undo()
             self.current_song_cues.append(dlg.cue)
             self._store_current_custom_cues()
             self._render_cues_to_table(self.current_song_cues)
@@ -731,6 +782,7 @@ class PerformTab(QWidget if HAS_QT else object):
             return
         dlg = EditCueDialog(self.current_song_cues[r], is_new=False, parent=self)
         if dlg.exec() == getattr(QDialog, "Accepted", getattr(getattr(QDialog, "DialogCode", None), "Accepted", 1)):
+            self.record_undo()
             self.current_song_cues[r] = dlg.cue
             self._store_current_custom_cues()
             self._render_cues_to_table(self.current_song_cues)
@@ -746,6 +798,7 @@ class PerformTab(QWidget if HAS_QT else object):
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
         if reply == QMessageBox.Yes:
+            self.record_undo()
             del self.current_song_cues[r]
             self._store_current_custom_cues()
             self._render_cues_to_table(self.current_song_cues)
@@ -756,10 +809,9 @@ class PerformTab(QWidget if HAS_QT else object):
         target = r + delta
         if not (0 <= r < len(self.current_song_cues) and 0 <= target < len(self.current_song_cues)):
             return
+        self.record_undo()
         self.current_song_cues[r], self.current_song_cues[target] = self.current_song_cues[target], self.current_song_cues[r]
-        curr_row = self.playlist_widget.currentRow()
-        if 0 <= curr_row < len(self.playlist):
-            self.playlist[curr_row]["custom_cues"] = list(self.current_song_cues)
+        self._store_current_custom_cues()
         self._render_cues_to_table(self.current_song_cues)
         self.cue_table.setCurrentCell(target, 0)
         self.auto_sync_to_page()

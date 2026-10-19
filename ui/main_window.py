@@ -283,11 +283,56 @@ class MainWindow(QMainWindow if HAS_QT else object):
         bind("B", self._on_blackout_clicked)
 
         # Global Undo: Ctrl+Z
-        bind("Ctrl+Z", self.tab_address.undo_patch)
+        bind("Ctrl+Z", self._on_global_undo)
 
         # Global Redo: Ctrl+Shift+Z or Ctrl+Y (both are documented)
-        bind("Ctrl+Shift+Z", self.tab_address.redo_patch)
-        bind("Ctrl+Y", self.tab_address.redo_patch)
+        bind("Ctrl+Shift+Z", self._on_global_redo)
+        bind("Ctrl+Y", self._on_global_redo)
+
+    def _on_global_undo(self) -> None:
+        """Context-aware Undo dispatcher (QLC+ & grandMA style)."""
+        idx = self.stack.currentIndex()
+        if idx == 0 and hasattr(self, "tab_address"):
+            self.tab_address.undo_patch()
+            return
+        if idx == 3 and hasattr(self, "tab_perform"):
+            if self.tab_perform.can_undo():
+                self.tab_perform.undo_cue()
+                return
+            if hasattr(self, "song_library") and self.song_library.can_undo():
+                self.song_library.undo()
+                return
+        if idx in (1, 2) and hasattr(self, "song_library") and self.song_library.can_undo():
+            self.song_library.undo()
+            return
+        if idx in (4, 5):
+            sb = self.statusBar()
+            if sb:
+                sb.showMessage("Live playback surface is protected. Use [PREV] to step back or RESET DMX.", 3000)
+            return
+        if hasattr(self, "tab_address"):
+            self.tab_address.undo_patch()
+
+    def _on_global_redo(self) -> None:
+        """Context-aware Redo dispatcher (QLC+ & grandMA style)."""
+        idx = self.stack.currentIndex()
+        if idx == 0 and hasattr(self, "tab_address"):
+            self.tab_address.redo_patch()
+            return
+        if idx == 3 and hasattr(self, "tab_perform"):
+            if self.tab_perform.can_redo():
+                self.tab_perform.redo_cue()
+                return
+            if hasattr(self, "song_library") and self.song_library.can_redo():
+                self.song_library.redo()
+                return
+        if idx in (1, 2) and hasattr(self, "song_library") and self.song_library.can_redo():
+            self.song_library.redo()
+            return
+        if idx in (4, 5):
+            return
+        if hasattr(self, "tab_address"):
+            self.tab_address.redo_patch()
 
     def _switch_workspace(self, index: int) -> None:
         self.stack.setCurrentIndex(index)
@@ -502,7 +547,6 @@ class MainWindow(QMainWindow if HAS_QT else object):
 
     def _on_export_to_page(self, cues: list) -> None:
         self.tab_page.load_cues(cues)
-        self._switch_workspace(4)  # Switch to Page tab
 
     def _get_target_dmx_for_cue(self, cue_info: dict) -> bytearray:
         """Calculate the 512-channel DMX target buffer for a given cue based on patched fixtures.

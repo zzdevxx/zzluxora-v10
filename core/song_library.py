@@ -88,6 +88,55 @@ class SongLibrary:
         self._selected: int = -1
         self._on_changed: list[Callable[[], None]] = []
         self._on_selection: list[Callable[[int], None]] = []
+        self._undo_stack: list[dict] = []
+        self._redo_stack: list[dict] = []
+
+    # -- undo / redo -----------------------------------------------------
+
+    def _snapshot(self) -> dict:
+        return {
+            "songs": [
+                SongEntry(path=s.path, analysis=dict(s.analysis) if isinstance(s.analysis, dict) else None)
+                for s in self._songs
+            ],
+            "selected": self._selected,
+        }
+
+    def _restore_snapshot(self, snap: dict) -> None:
+        self._songs = [
+            SongEntry(path=s.path, analysis=dict(s.analysis) if isinstance(s.analysis, dict) else None)
+            for s in snap.get("songs", [])
+        ]
+        self._selected = snap.get("selected", -1)
+        self._broadcast_changed()
+        self._broadcast_selection()
+
+    def record_undo(self) -> None:
+        """Save current state to undo stack before modifying song list."""
+        self._undo_stack.append(self._snapshot())
+        self._redo_stack.clear()
+
+    def can_undo(self) -> bool:
+        return bool(self._undo_stack)
+
+    def can_redo(self) -> bool:
+        return bool(self._redo_stack)
+
+    def undo(self) -> bool:
+        if not self.can_undo():
+            return False
+        self._redo_stack.append(self._snapshot())
+        snap = self._undo_stack.pop()
+        self._restore_snapshot(snap)
+        return True
+
+    def redo(self) -> bool:
+        if not self.can_redo():
+            return False
+        self._undo_stack.append(self._snapshot())
+        snap = self._redo_stack.pop()
+        self._restore_snapshot(snap)
+        return True
 
     # -- listeners -------------------------------------------------------
 
@@ -146,6 +195,7 @@ class SongLibrary:
             if select:
                 self.select(existing)
             return existing
+        self.record_undo()
         self._songs.append(SongEntry(path=str(path)))
         index = len(self._songs) - 1
         if select:
@@ -233,20 +283,11 @@ class SongLibrary:
             self.set_analysis(index, analysis)
 
     def remove(self, indices: list[int]) -> None:
-        """Remove songs by index. Invalid indices are ignored.
-
-        The selection follows the song, not the slot. Removing a song above the
-        selected one used to leave ``_selected`` pointing at the same slot, which
-        now holds a different track, so the Result tab silently described a song
-        the operator never chose (measured: selecting lagu_B and removing lagu_A
-        made the report read lagu_C). Count how many removed indices sit below
-        the selection and shift it down by that many; if the selected song itself
-        was removed, keep the slot but clamp it into range.
-        """
+        """Remove songs by index. Invalid indices are ignored."""
         valid = sorted({i for i in indices if 0 <= i < len(self._songs)}, reverse=True)
         if not valid:
             return
-
+        self.record_undo()
         removed_below = sum(1 for i in valid if i < self._selected)
         selection_removed = self._selected in valid
 
@@ -262,21 +303,13 @@ class SongLibrary:
         self._broadcast_selection()
 
     def move(self, index: int, delta: int) -> int:
-        """Move one song by delta positions. Returns its new index.
-
-        The selection follows the song, not the slot. ``_selected = target``
-        moved the highlight to whichever song was dragged, so reordering the
-        list always jumped the Result tab to that song even when a different
-        track was selected (measured: selecting c.wav and moving a.wav by +1 made
-        the report read a.wav). Carry the selected song's identity through the
-        swap instead.
-        """
         target = index + delta
         if not (0 <= index < len(self._songs)):
             return index
         if not (0 <= target < len(self._songs)):
             return index
 
+        self.record_undo()
         selected_song = self._songs[self._selected] if 0 <= self._selected < len(self._songs) else None
 
         self._songs[index], self._songs[target] = self._songs[target], self._songs[index]
@@ -295,6 +328,7 @@ class SongLibrary:
         """Arbitrary position reorder for drag-and-drop playlist rearrangements."""
         if not (0 <= from_index < len(self._songs) and 0 <= to_index < len(self._songs)):
             return
+        self.record_undo()
         selected_song = self._songs[self._selected] if 0 <= self._selected < len(self._songs) else None
         item = self._songs.pop(from_index)
         self._songs.insert(to_index, item)
@@ -313,6 +347,8 @@ class SongLibrary:
         self._broadcast_selection()
 
     def clear(self) -> None:
+        if self._songs:
+            self.record_undo()
         self._songs.clear()
         self._selected = -1
         self._broadcast_changed()
