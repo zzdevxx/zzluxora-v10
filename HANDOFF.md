@@ -26,7 +26,7 @@ Dokumen ini untuk agent yang melanjutkan pekerjaan ZZLUXORA. Baca ini dulu sebel
 
 | | |
 |---|---|
-| Software `zzdree/zzluxora-v10` | HEAD **`115a048`**, working tree **bersih**, sinkron `origin/main` |
+| Software `zzdree/zzluxora-v10` | HEAD **`0ae22ea`**, working tree **bersih**, sinkron `origin/main` |
 | Naskah `zzdree/zzluxora-thesis` | HEAD **`b2fbbc7`**, bersih, sinkron (Bab 4 & 5 naskah v5 terisi data empiris) |
 | Hardware `zzdree/esp32-artnet-dmx` | HEAD **`cddd36f`**, bersih, sinkron (firmware v4.0.1 pacing absolut & packet counter) |
 | Test suite | **177 test unik lulus** (146 unittest + 31 pytest), exit 0 · jumlah wajib diperiksa, lihat §2c |
