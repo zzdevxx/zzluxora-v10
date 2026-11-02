@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ZZLUXORA v10
+GenericName=Stage Lighting Console
+Comment=Next-Gen Audio-Reactive Stage Lighting Console (grandMA3 & QLC+ Architecture)
+Exec=/home/zzdree/ANDREAS/zzluxora-v10/run.sh
+Icon=/home/zzdree/ANDREAS/zzluxora-v10/ui/assets/logo_zz.png
+Terminal=false
+Categories=AudioVideo;Audio;Development;
+Keywords=lighting;dmx;artnet;grandma;qlcplus;stage;audio;
+StartupNotify=true
+StartupWMClass=ZZLUXORA
+Path=/home/zzdree/ANDREAS/zzluxora-v10
