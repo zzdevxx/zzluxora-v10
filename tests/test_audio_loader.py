@@ -68,8 +68,10 @@ class TestAudioLoader(unittest.TestCase):
 
     def test_permission_error_is_not_swallowed(self):
         """An unreadable file is an I/O fault, not a decode fallback."""
-        if os.geteuid() == 0:
+        if hasattr(os, "geteuid") and os.geteuid() == 0:
             self.skipTest("root bypasses POSIX permission bits")
+        if os.name == "nt":
+            self.skipTest("Windows does not support POSIX permission revocation via chmod")
 
         with tempfile.TemporaryDirectory() as directory:
             path = os.path.join(directory, "locked.wav")

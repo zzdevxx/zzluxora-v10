@@ -38,7 +38,7 @@ def run_fader_test(target_ip: str = "127.0.0.1", duration: float = 30.0, fixture
     print(f"Transmission FPS : 43.07 FPS (Standard DMX refresh)")
     print("-" * 76)
     print("QLC+ Setup Instructions:")
-    print("1. Open QLC+ -> open workspace /home/zzdree/ANDREAS/zzluxora_test.qxw")
+    print("1. Open QLC+ -> open workspace showfiles/zzluxora_test.qxw")
     print("   or open the 'Inputs/Outputs' tab and check 'Input' for Universe 1, ArtNet 127.0.0.1.")
     print("2. Open the 'Simple Desk' or 'Virtual Console' tab in QLC+.")
     print("3. Channel faders move in real time with the audio mood!")

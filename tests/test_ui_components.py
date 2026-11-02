@@ -575,7 +575,7 @@ class TestUIModules(unittest.TestCase):
 
     def test_qlcplus_definition_and_workspace_use_requested_eight_channel_order(self):
         showfiles_dir = BASE_DIR / "showfiles"
-        zz_fixture_dir = Path.home() / "ANDREAS" / "zz-fixture"
+        zz_fixture_dir = (BASE_DIR.parent / "zz-fixture") if (BASE_DIR.parent / "zz-fixture").exists() else (Path.home() / "ANDREAS" / "zz-fixture")
         ns = {"q": "http://www.qlcplus.org/FixtureDefinition"}
         qxf = ET.parse(zz_fixture_dir / "Kumastb-STL47.qxf").getroot()
         expected = ["Dimmer", "Red", "Green", "Blue", "White", "Strobe", "Program", "Speed"]
@@ -605,7 +605,7 @@ class TestUIModules(unittest.TestCase):
 
     def test_official_kumastb_and_alien_fixtures(self):
         fixtures_dir = BASE_DIR / "fixtures"
-        zz_fixture_dir = Path.home() / "ANDREAS" / "zz-fixture"
+        zz_fixture_dir = (BASE_DIR.parent / "zz-fixture") if (BASE_DIR.parent / "zz-fixture").exists() else (Path.home() / "ANDREAS" / "zz-fixture")
 
         # Verify fixtures directory contains ONLY official .zfx profiles
         fixture_files = sorted([f.name for f in fixtures_dir.glob("*") if f.is_file()])
