@@ -1,9 +1,9 @@
 # 🎛️ ZZLUXORA v10.0.0 — Next-Gen Production Stage Lighting Console
 
-[![Release](https://img.shields.io/badge/Release-v10.0.0-16a34a?style=flat-square)](https://gitlab.com/zzdree/zzluxora-v10)
+[![Release](https://img.shields.io/badge/Release-v10.0.0-16a34a?style=flat-square)](https://gitlab.com/zzdevxx/zzluxora-v10)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Qt](https://img.shields.io/badge/PySide6-Qt6-41CD52?style=flat-square&logo=qt)](https://doc.qt.io/qtforpython/)
-[![Tests](https://img.shields.io/badge/Tests-177%20passing-brightgreen?style=flat-square)](https://gitlab.com/zzdree/zzluxora-v10)
+[![Tests](https://img.shields.io/badge/Tests-177%20passing-brightgreen?style=flat-square)](https://gitlab.com/zzdevxx/zzluxora-v10)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue?style=flat-square)](LICENSE)
 
 
@@ -21,9 +21,9 @@ Proyek ini merupakan perangkat lunak konsol utama dari ekosistem riset terintegr
 
 | Komponen | Repositori | Peran & Deskripsi |
 |---|---|---|
-| 🎛️ **Software Konsol** | [**`zzdree/zzluxora-v10`**](https://gitlab.com/zzdree/zzluxora-v10) *(Repo Ini)* | Perangkat lunak konsol pencahayaan panggung cerdas (Python 3.10+, PySide6/Qt6, NumPy STFT/MIR Core Engine, grandMA3 style mixer 257 fader, 2D/3D stage visualizer, Art-Net 4 DMX512 UDP transmitter). |
-| 🎓 **Naskah & Riset** | [**`zzdree/zzluxora-thesis`**](https://gitlab.com/zzdree/zzluxora-thesis) | Naskah akademik skripsi S1 Teknik Komputer FT UNNES, pemodelan matematis STFT Hann & Russell 2D, protokol uji lapangan 41-kolom, instrumen evaluasi (SUS & Kesesuaian), serta draf ilmiah Bab 1–5 lengkap. |
-| ⚡ **Hardware Node** | [**`zzdree/esp32-artnet-dmx`**](https://gitlab.com/zzdree/esp32-artnet-dmx) | Prototipe perangkat keras konverter nirkabel Art-Net ke DMX512 berbasis ESP32 Dual-Core (FreeRTOS SMP Core 0 DMX / Core 1 WiFi), transceiver RS-485 MAX485, LCD 16x2 I2C, dan boks fabrikasi Box X4 DIY. |
+| 🎛️ **Software Konsol** | [**`zzdevxx/zzluxora-v10`**](https://gitlab.com/zzdevxx/zzluxora-v10) *(Repo Ini)* | Perangkat lunak konsol pencahayaan panggung cerdas (Python 3.10+, PySide6/Qt6, NumPy STFT/MIR Core Engine, grandMA3 style mixer 257 fader, 2D/3D stage visualizer, Art-Net 4 DMX512 UDP transmitter). |
+| 🎓 **Naskah & Riset** | [**`zzdevxx/zzluxora-thesis`**](https://gitlab.com/zzdevxx/zzluxora-thesis) | Naskah akademik skripsi S1 Teknik Komputer FT UNNES, pemodelan matematis STFT Hann & Russell 2D, protokol uji lapangan 41-kolom, instrumen evaluasi (SUS & Kesesuaian), serta draf ilmiah Bab 1–5 lengkap. |
+| ⚡ **Hardware Node** | [**`zzdevxx/esp32-artnet-dmx`**](https://gitlab.com/zzdevxx/esp32-artnet-dmx) | Prototipe perangkat keras konverter nirkabel Art-Net ke DMX512 berbasis ESP32 Dual-Core (FreeRTOS SMP Core 0 DMX / Core 1 WiFi), transceiver RS-485 MAX485, LCD 16x2 I2C, dan boks fabrikasi Box X4 DIY. |
 
 ---
 

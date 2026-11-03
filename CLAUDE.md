@@ -20,7 +20,7 @@ python3 ~/ANDREAS/agent-memory/tools/memlog.py search "kata kunci"              
 ## 📌 1. Ikhtisar & Identitas Proyek
 
 - **Nama Aplikasi:** **ZZLUXORA** (v10.0.0 Flagship Next-Gen)
-- **Repositori:** `https://github.com/zzdree/zzluxora-v10.git` (Branch: `main`)
+- **Repositori:** `https://github.com/zzdevxx/zzluxora-v10.git` (Branch: `main`)
 - **Peneliti / Pengembang:** Andreas Restuawanta Christwara (`NIM: 5312422036`)
 - **Dosen Pembimbing:** Mario Norman Syah, S.Pd., M.Eng.
 - **Institusi:** Program Studi S1 Teknik Komputer, Fakultas Teknik, Universitas Negeri Semarang (UNNES)
@@ -144,7 +144,7 @@ zzluxora-v10/
 
 ## 🔄 5. Disiplin Git & Sinkronisasi
 
-1. Repositori GitHub `zzdree/zzluxora-v10` dan `zzdree/zzluxora-thesis` adalah **Single Source of Truth**.
+1. Repositori GitHub `zzdevxx/zzluxora-v10` dan `zzdevxx/zzluxora-thesis` adalah **Single Source of Truth**.
 2. Setiap fitur yang selesai diuji wajib di-commit dan di-push ke branch `main`.
 3. Di laptop utama, sinkronisasi dilakukan hanya dengan `git pull origin main`.
 

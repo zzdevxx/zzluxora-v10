@@ -182,4 +182,4 @@ Audit adversarial atas seluruh permukaan aplikasi. Setiap temuan direproduksi le
 - [ ] Uji coba koneksi Wi-Fi ke SoftAP ESP32 (`192.168.4.1`) di laptop ASUS X407MA.
 - [ ] Uji coba pengontrolan fisik 4 unit PAR LED RGBW via kabel DMX512 XLR 3-pin di Gereja GIA Deliksari.
 - [ ] Build installer executable Windows 11 (`.exe` via Inno Setup) di laptop Acer Swift 3.
-- [x] Sinkronisasi penuh ke repositori GitHub `zzdree/zzluxora-v10` sebagai Single Source of Truth.
+- [x] Sinkronisasi penuh ke repositori GitHub `zzdevxx/zzluxora-v10` sebagai Single Source of Truth.

@@ -26,9 +26,9 @@ Dokumen ini untuk agent yang melanjutkan pekerjaan ZZLUXORA. Baca ini dulu sebel
 
 | | |
 |---|---|
-| Software `zzdree/zzluxora-v10` | HEAD **`1d28bf8`**, working tree **bersih**, sinkron `origin/main` |
-| Naskah `zzdree/zzluxora-thesis` | HEAD **`b2fbbc7`**, bersih, sinkron (Bab 4 & 5 naskah v5 terisi data empiris) |
-| Hardware `zzdree/esp32-artnet-dmx` | HEAD **`cddd36f`**, bersih, sinkron (firmware v4.0.1 pacing absolut & packet counter) |
+| Software `zzdevxx/zzluxora-v10` | HEAD **`1d28bf8`**, working tree **bersih**, sinkron `origin/main` |
+| Naskah `zzdevxx/zzluxora-thesis` | HEAD **`b2fbbc7`**, bersih, sinkron (Bab 4 & 5 naskah v5 terisi data empiris) |
+| Hardware `zzdevxx/esp32-artnet-dmx` | HEAD **`cddd36f`**, bersih, sinkron (firmware v4.0.1 pacing absolut & packet counter) |
 | Test suite | **194 test unik lulus** (163 unittest + 31 pytest), exit 0 · jumlah wajib diperiksa, lihat §2c |
 | Skenario Tab | **38/38 skenario per tab LULUS 100%** (`python3 tools/run_all_tab_scenarios.py`) |
 | Skenario Ekstrem | **8/8 skenario lanjut & edge-case LULUS 100%** (`python3 tools/test_advanced_scenarios.py`) |
